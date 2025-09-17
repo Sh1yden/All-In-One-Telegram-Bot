@@ -2,18 +2,21 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import Router, html
 
+from bot.keyboards.k_start import get_inl_btns_start
+
 
 router = Router()
 
 
 @router.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    """
-    This handler receives messages with `/start` command
-    """
-    # Most event objects have aliases for API methods that can be called in events' context
-    # For example if you want to answer to incoming message you can use `message.answer(...)` alias
-    # and the target chat will be passed to :ref:`aiogram.methods.send_message.SendMessage`
-    # method automatically or call API method directly via
-    # Bot instance: `bot.send_message(chat_id=message.chat.id, ...)`
-    await message.answer(f"Hello, {html.bold(message.from_user.full_name)}!")
+    """Вывод приветственного сообщения после команды /start"""
+
+    await message.answer(
+        f"""
+Привет, {html.bold(message.from_user.full_name) or "Пользователь"}!
+Тут будет меню выбора различных функций бота. Так же чтобы вывести все команды бота напиши /help.
+Вызвать функцию погоды можно нажав кнопку ниже, либо же введя команду /weather.
+        """,
+        reply_markup=get_inl_btns_start(),
+    )
