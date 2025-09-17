@@ -3,7 +3,8 @@ from aiogram.filters import Command
 from aiogram import Router
 
 from bot.callbacks.WeatherCallback import WeatherCallback  # CALLBACK
-from services.WeatherService import WeatherService  # API
+
+# from services.WeatherService import WeatherService  # API
 
 from bot.keyboards.k_weather import get_inl_btns_weather  # BTN
 from bot.handlers.start import command_start_handler
