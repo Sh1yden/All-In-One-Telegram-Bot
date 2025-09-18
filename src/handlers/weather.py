@@ -2,12 +2,12 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from aiogram import Router
 
-from bot.callbacks.WeatherCallback import WeatherCallback  # CALLBACK
+from src.callbacks.WeatherCallback import WeatherCallback  # CALLBACK
 
 # from services.WeatherService import WeatherService  # API
 
-from bot.keyboards.k_weather import get_inl_btns_weather  # BTN
-from bot.handlers.start import command_start_handler
+from src.keyboards.k_weather import get_inl_btns_weather  # BTN
+from src.handlers.start import command_start_handler
 
 
 router = Router()

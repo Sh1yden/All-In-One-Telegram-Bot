@@ -6,8 +6,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from bot.handlers.start import router as start_router
-from bot.handlers.weather import router as weather_router
+from src.handlers.start import router as start_router
+from src.handlers.weather import router as weather_router
 
 
 def get_token():

@@ -1,7 +1,7 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot.callbacks.WeatherCallback import WeatherCallback
+from src.callbacks.WeatherCallback import WeatherCallback
 
 
 def get_inl_btns_start() -> InlineKeyboardMarkup:

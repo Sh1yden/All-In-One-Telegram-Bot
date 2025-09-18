@@ -2,7 +2,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import Router, html
 
-from bot.keyboards.k_start import get_inl_btns_start
+from src.keyboards.k_start import get_inl_btns_start
 
 
 router = Router()
