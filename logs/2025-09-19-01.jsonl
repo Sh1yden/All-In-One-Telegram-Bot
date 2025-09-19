@@ -1,0 +1,6 @@
+{"timestamp": "03:30:35.091", "level": "DEBUG", "filename": "Logging.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "Debug message test / Тест отладочного сообщения"}
+{"timestamp": "03:30:35.093", "level": "INFO", "filename": "Logging.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "Info message test / Тест информационного сообщения"}
+{"timestamp": "03:30:35.095", "level": "WARNING", "filename": "Logging.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "Warning message test / Тест предупреждающего сообщения"}
+{"timestamp": "03:30:35.096", "level": "ERROR", "filename": "Logging.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "Error message test / Тест сообщения об ошибке"}
+{"timestamp": "03:30:35.098", "level": "CRITICAL", "filename": "Logging.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "Critical message test / Тест критического сообщения"}
+{"timestamp": "03:30:35.099", "level": "INFO", "filename": "Logging.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "User 12345 logged in"}
