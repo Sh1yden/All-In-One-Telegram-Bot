@@ -10,6 +10,7 @@ class Colors:
     # Снять цвет
     RESET = "\033[0m"
 
+    # CONSOLE LOG
     CURRENT_TIME_COLOR = "\u001b[34;1m"  # Светло синий
     FILENAME_COLOR = "\u001b[32m"  # Зелёный
     MODULE_COLOR = "\u001b[33m"  # Желтый
@@ -110,9 +111,6 @@ def setup_logging():
     """
     Настройка логирования в консоль (с цветами) и файлы в формате JSONL
     """
-
-    # Создаем директорию для логов, если её нет
-    os.makedirs("logs", exist_ok=True)
 
     # Создаем логгер
     logger = logging.getLogger()

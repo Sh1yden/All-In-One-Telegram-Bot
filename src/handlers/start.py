@@ -3,21 +3,30 @@ from aiogram.types import Message
 from aiogram import Router, html
 
 from src.keyboards.k_start import get_inl_btns_start
+from src.core.Logging import get_logger
+from src.config.TextMessages import get_message
 
 
 router = Router()
+_lg = get_logger()
 
 
 @router.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     """Вывод приветственного сообщения после команды /start"""
+    try:
+        _lg.debug("Start handler.")
 
-    full_name_user = html.bold(message.from_user.full_name)
-    main_menu_text = f"""
-Привет, {full_name_user or "Пользователь"}!  Тут будет меню выбора различных функций бота. Так же чтобы вывести все команды бота напиши /help. Вызвать функцию погоды можно нажав кнопку ниже, либо же введя команду /weather_menu.
-        """
+        full_name_user = html.bold(message.from_user.full_name)
+        _lg.debug(f"{full_name_user}")
 
-    await message.answer(
-        text=main_menu_text,
-        reply_markup=get_inl_btns_start(),
-    )
+        main_menu_text = f"""{get_message("RU_LN")["start_m"]["message1"]}{full_name_user or "Пользователь"}{get_message("RU_LN")["start_m"]["message2"]}"""
+        _lg.debug(f"{main_menu_text}")
+
+        await message.answer(
+            text=main_menu_text,
+            reply_markup=get_inl_btns_start(),
+        )
+
+    except Exception as e:
+        _lg.critical(f"Internal error:{e}.")

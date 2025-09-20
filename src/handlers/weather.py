@@ -1,18 +1,19 @@
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
-from aiogram import Router
+from aiogram import Router, html
 
 from src.callbacks.WeatherCallback import WeatherCallback  # CALLBACK
 
-# from services.WeatherService import WeatherService  # API
+# from services.WeatherService import WeatherService  # API # TODO
 
-from src.keyboards.k_weather import get_inl_btns_weather  # BTN
-from src.handlers.start import command_start_handler
+from src.keyboards.k_weather import get_inl_btns_weather  # BTN # TODO
+from src.keyboards.k_start import get_inl_btns_start  # BTN # TODO
+from src.core.Logging import get_logger
+from src.config.TextMessages import get_message
 
 
 router = Router()
-
-_menu_text = "Это меню погоды. Выбрать нужные функции можно под сообщением или написав нужные команды."
+_lg = get_logger()
 
 
 # обработка нажатия кнопки Погода
@@ -28,16 +29,28 @@ async def weather_callback_handler(
     # current_weather = await WeatherService.get_current_weather()
 
     if callback_data.action == "weather_menu":
+
         await callback.message.edit_text(
-            text=_menu_text, reply_markup=get_inl_btns_weather()
+            text=get_message("RU_LN")["weather_m"]["message"],
+            reply_markup=get_inl_btns_weather(),
         )
 
     if callback_data.action == "weather_get_back":
-        await command_start_handler(callback.message)
+
+        main_menu_text = f"""{get_message("RU_LN")["start_m"]["message1"]}{"Пользователь"}{get_message("RU_LN")["start_m"]["message2"]}"""
+        _lg.debug(f"{main_menu_text}")
+
+        await callback.message.edit_text(
+            text=main_menu_text,
+            reply_markup=get_inl_btns_start(),
+        )
 
 
 # обработка команды /weather_menu
 @router.message(Command("weather_menu"))
 async def command_weather_handler(message: Message):
 
-    await message.answer(text=_menu_text, reply_markup=get_inl_btns_weather())
+    await message.answer(
+        text=get_message("RU_LN")["weather_m"]["message"],
+        reply_markup=get_inl_btns_weather(),
+    )
