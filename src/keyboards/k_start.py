@@ -2,6 +2,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from src.callbacks.WeatherCallback import WeatherCallback
+from src.config.TextMessages import get_message
 
 
 def get_inl_btns_start() -> InlineKeyboardMarkup:
@@ -12,7 +13,8 @@ def get_inl_btns_start() -> InlineKeyboardMarkup:
     # добавить еще кнопок для других функций
     builder.row(
         InlineKeyboardButton(
-            text="Погода", callback_data=WeatherCallback(action="weather_menu").pack()
+            text=get_message("RU_LN")["start_m"]["buttons"][0],
+            callback_data=WeatherCallback(action="weather_menu").pack(),
         )
     )
 
