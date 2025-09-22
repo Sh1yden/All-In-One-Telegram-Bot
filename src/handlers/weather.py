@@ -7,7 +7,8 @@ from src.callbacks.WeatherCallback import WeatherCallback  # CALLBACK
 from src.services.WeatherService import WeatherService  # API # TODO
 
 from src.keyboards.k_weather import get_inl_btns_weather  # BTN # TODO
-from src.keyboards.k_start import get_inl_btns_start  # BTN # TODO
+from src.keyboards.k_start import get_inl_btns_start  # BTN
+from src.keyboards.k_device import get_inl_btns_device  # BTN
 from src.core.Logging import get_logger
 from src.config.TextMessages import get_message
 
@@ -47,39 +48,45 @@ async def weather_callback_handler(
 
     # 🌡 Сейчас
     if callback_data.action == "weather_now":
-        pass
+        WeatherService.get_weather_now()
 
     # 📊 Почасовой
     if callback_data.action == "weather_hours":
-        pass
+        WeatherService.get_weather_hours()
 
     # 📆 На 5 дней
     if callback_data.action == "weather_5d":
-        pass
+        WeatherService.get_weather_5d()
 
     # 🌅 Утро / 🌇 Вечер
     if callback_data.action == "weather_day_night":
-        pass
+        WeatherService.get_weather_day_night()
 
     # 🌦 Осадки
     if callback_data.action == "weather_rain":
-        pass
+        WeatherService.get_weather_rain()
 
     # 🧭 Ветер/давление
     if callback_data.action == "weather_wind_pressure":
-        pass
+        WeatherService.get_weather_wind_pressure()
 
     # ⚙️ Настроить
     if callback_data.action == "weather_settings":
         pass
 
+    # Функции на потом
     # 🔔 Подписка
     if callback_data.action == "weather_subscription":
         pass
 
     # 📍 Локация:
     if callback_data.action == "weather_location":
-        pass
+
+        # Переброс на выбор платформы для правильного определения местоположения
+        await message.answer(
+            text=get_message("RU_LN")["device_m"]["message"],
+            reply_markup=get_inl_btns_device(),
+        )
 
     # 🔙 Назад
     if callback_data.action == "weather_get_back":

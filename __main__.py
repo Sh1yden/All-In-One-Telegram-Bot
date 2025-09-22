@@ -8,12 +8,12 @@ from aiogram.enums import ParseMode
 from src.handlers.start import router as start_router
 from src.handlers.help import router as help_router
 from src.handlers.weather import router as weather_router
+from src.handlers.location import router as location_router
+from src.handlers.device import router as device_router
 
 # from src.config.AppConfig import AppConfig
 from src.core.Logging import get_logger
 from src.config.Token import get_token
-
-# from src.config.TextMessages import get_all_messages, get_message_from_key
 
 
 # _appcfg = AppConfig()
@@ -21,7 +21,7 @@ from src.config.Token import get_token
 _lg = get_logger()
 _lg.debug("Logger init.")
 
-TOKEN_PATH = os.path.expanduser(
+__TOKEN_PATH = os.path.expanduser(
     "~\\Documents\\All Code Programming\\_secret_api_keys\\api_keys.json"
 )
 
@@ -31,7 +31,7 @@ def create_bot() -> Bot | None:
         _lg.debug("Creating bot.")
 
         bot = Bot(
-            token=get_token(TOKEN_PATH),
+            token=get_token(__TOKEN_PATH),
             default=DefaultBotProperties(parse_mode=ParseMode.HTML),
         )
 
@@ -49,6 +49,8 @@ def create_dispatcher() -> Dispatcher | None:
         dp.include_router(start_router)
         dp.include_router(help_router)
         dp.include_router(weather_router)
+        dp.include_router(location_router)
+        dp.include_router(device_router)
 
         return dp
 

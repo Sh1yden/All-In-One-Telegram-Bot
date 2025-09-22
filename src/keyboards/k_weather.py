@@ -10,7 +10,7 @@ def get_inl_btns_weather() -> InlineKeyboardMarkup:
 
     builder = InlineKeyboardBuilder()
 
-    # 🌡 Сейчас     📊 Почасовой     📆 На 5 дней
+    # 🌡 Сейчас     📊 Почасовой
     builder.row(
         InlineKeyboardButton(
             text=get_message("RU_LN")["weather_m"]["buttons"][0],
@@ -20,10 +20,6 @@ def get_inl_btns_weather() -> InlineKeyboardMarkup:
             text=get_message("RU_LN")["weather_m"]["buttons"][1],
             callback_data=WeatherCallback(action="weather_hours").pack(),
         ),
-        InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][2],
-            callback_data=WeatherCallback(action="weather_5d").pack(),
-        ),
     )
 
     # 🌅 Утро / 🌇 Вечер
@@ -31,6 +27,14 @@ def get_inl_btns_weather() -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text=get_message("RU_LN")["weather_m"]["buttons"][3],
             callback_data=WeatherCallback(action="weather_day_night").pack(),
+        ),
+    )
+
+    # 📆 На 5 дней
+    builder.row(
+        InlineKeyboardButton(
+            text=get_message("RU_LN")["weather_m"]["buttons"][2],
+            callback_data=WeatherCallback(action="weather_5d").pack(),
         ),
     )
 
@@ -46,7 +50,15 @@ def get_inl_btns_weather() -> InlineKeyboardMarkup:
         ),
     )
 
-    # ⚙️ Настроить  🔔 Подписка     📍 Локация:
+    # 📍 Локация:
+    builder.row(
+        InlineKeyboardButton(
+            text=get_message("RU_LN")["weather_m"]["buttons"][8] + "Ваш город",
+            callback_data=WeatherCallback(action="weather_location").pack(),
+        ),
+    )
+
+    # ⚙️ Настроить  🔔 Подписка
     builder.row(
         InlineKeyboardButton(
             text=get_message("RU_LN")["weather_m"]["buttons"][6],
@@ -55,10 +67,6 @@ def get_inl_btns_weather() -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text=get_message("RU_LN")["weather_m"]["buttons"][7],
             callback_data=WeatherCallback(action="weather_subscription").pack(),
-        ),
-        InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][8],
-            callback_data=WeatherCallback(action="weather_location").pack(),
         ),
     )
 
@@ -70,4 +78,4 @@ def get_inl_btns_weather() -> InlineKeyboardMarkup:
         ),
     )
 
-    return builder.as_markup()
+    return builder.as_markup(resize_keyboard=True)

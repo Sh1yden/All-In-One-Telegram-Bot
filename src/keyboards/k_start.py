@@ -18,4 +18,4 @@ def get_inl_btns_start() -> InlineKeyboardMarkup:
         )
     )
 
-    return builder.as_markup()
+    return builder.as_markup(resize_keyboard=True)

@@ -1,0 +1,179 @@
+{"timestamp": "05:08:59.058", "level": "DEBUG", "filename": "AppConfig.py", "module": "logging", "class": "FileHandler", "def": "__init__", "message": "Logger init."}
+{"timestamp": "05:08:59.090", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "Logger init."}
+{"timestamp": "05:08:59.168", "level": "DEBUG", "filename": "Token.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "Logger init."}
+{"timestamp": "05:08:59.169", "level": "DEBUG", "filename": "__main__.py", "module": "logging", "class": "FileHandler", "def": "<module>", "message": "Logger init."}
+{"timestamp": "05:08:59.173", "level": "DEBUG", "filename": "proactor_events.py", "module": "logging", "class": "FileHandler", "def": "__init__", "message": "Using proactor: IocpProactor"}
+{"timestamp": "05:08:59.176", "level": "DEBUG", "filename": "__main__.py", "module": "logging", "class": "FileHandler", "def": "main", "message": "Start main func."}
+{"timestamp": "05:08:59.178", "level": "DEBUG", "filename": "__main__.py", "module": "logging", "class": "FileHandler", "def": "create_bot", "message": "Creating bot."}
+{"timestamp": "05:08:59.181", "level": "DEBUG", "filename": "Token.py", "module": "logging", "class": "FileHandler", "def": "get_token", "message": "Getting token."}
+{"timestamp": "05:08:59.184", "level": "DEBUG", "filename": "Token.py", "module": "logging", "class": "FileHandler", "def": "get_token", "message": "Token loaded successfully."}
+{"timestamp": "05:08:59.378", "level": "DEBUG", "filename": "__main__.py", "module": "logging", "class": "FileHandler", "def": "create_dispatcher", "message": "Create Dispatcher."}
+{"timestamp": "05:08:59.381", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "start_polling", "message": "Start polling"}
+{"timestamp": "05:08:59.548", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "_polling", "message": "Run polling for bot @AIO_Shayden_bot id=8364617303 - 'All In One'"}
+{"timestamp": "05:09:08.612", "level": "DEBUG", "filename": "start.py", "module": "logging", "class": "FileHandler", "def": "command_start_handler", "message": "Start handler."}
+{"timestamp": "05:09:08.615", "level": "DEBUG", "filename": "start.py", "module": "logging", "class": "FileHandler", "def": "command_start_handler", "message": "<b>Shayden</b>"}
+{"timestamp": "05:09:08.620", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:08.623", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:08.627", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:08.632", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:08.636", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:08.640", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:08.644", "level": "DEBUG", "filename": "start.py", "module": "logging", "class": "FileHandler", "def": "command_start_handler", "message": "Привет🗿👋 <b>Shayden</b>!\n💼 Тут будет меню выбора различных функций бота.\n🚑 Так же чтобы вывести все команды бота напиши /help.\n⛅️ Вызвать функцию погоды можно нажав кнопку ниже, либо же введя команду /weather_menu."}
+{"timestamp": "05:09:08.652", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:08.658", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:08.663", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:08.848", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "feed_update", "message": "Update id=770794320 is handled. Duration 238 ms by bot id=8364617303"}
+{"timestamp": "05:09:10.468", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "load_message 🔄 Загрузка..."}
+{"timestamp": "05:09:10.471", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.475", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.479", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.482", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.486", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.490", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.493", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.497", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.502", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.506", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.509", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.513", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.517", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.521", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.525", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.529", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.533", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.537", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.541", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.545", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.549", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.552", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.556", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.561", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.564", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.568", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.572", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.575", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.580", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.584", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.589", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:10.593", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:10.597", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:10.671", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "feed_update", "message": "Update id=770794321 is handled. Duration 204 ms by bot id=8364617303"}
+{"timestamp": "05:09:22.168", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "load_message 🔄 Загрузка..."}
+{"timestamp": "05:09:22.171", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:22.175", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:22.179", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:22.183", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:22.187", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:22.195", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:22.199", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "Привет🗿👋 <b>Shayden</b>!\n💼 Тут будет меню выбора различных функций бота.\n🚑 Так же чтобы вывести все команды бота напиши /help.\n⛅️ Вызвать функцию погоды можно нажав кнопку ниже, либо же введя команду /weather_menu."}
+{"timestamp": "05:09:22.204", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:22.209", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:22.215", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:22.295", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "feed_update", "message": "Update id=770794322 is handled. Duration 128 ms by bot id=8364617303"}
+{"timestamp": "05:09:23.178", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "load_message 🔄 Загрузка..."}
+{"timestamp": "05:09:23.181", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.186", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.190", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.194", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.201", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.205", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.211", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.214", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.217", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.221", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.225", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.230", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.234", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.238", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.241", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.245", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.250", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.254", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.259", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.263", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.267", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.271", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.275", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.279", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.283", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.287", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.290", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.294", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.298", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.302", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.306", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:23.310", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:23.315", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:23.390", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "feed_update", "message": "Update id=770794323 is handled. Duration 212 ms by bot id=8364617303"}
+{"timestamp": "05:09:30.398", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "load_message 🔄 Загрузка..."}
+{"timestamp": "05:09:30.402", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:30.405", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:30.409", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:30.413", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:30.417", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:30.421", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:30.425", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "Привет🗿👋 <b>Shayden</b>!\n💼 Тут будет меню выбора различных функций бота.\n🚑 Так же чтобы вывести все команды бота напиши /help.\n⛅️ Вызвать функцию погоды можно нажав кнопку ниже, либо же введя команду /weather_menu."}
+{"timestamp": "05:09:30.428", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:30.433", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:30.436", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:30.507", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "feed_update", "message": "Update id=770794324 is handled. Duration 110 ms by bot id=8364617303"}
+{"timestamp": "05:09:31.370", "level": "DEBUG", "filename": "start.py", "module": "logging", "class": "FileHandler", "def": "command_start_handler", "message": "Start handler."}
+{"timestamp": "05:09:31.374", "level": "DEBUG", "filename": "start.py", "module": "logging", "class": "FileHandler", "def": "command_start_handler", "message": "<b>Shayden</b>"}
+{"timestamp": "05:09:31.377", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:31.380", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:31.384", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:31.388", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:31.391", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:31.396", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:31.399", "level": "DEBUG", "filename": "start.py", "module": "logging", "class": "FileHandler", "def": "command_start_handler", "message": "Привет🗿👋 <b>Shayden</b>!\n💼 Тут будет меню выбора различных функций бота.\n🚑 Так же чтобы вывести все команды бота напиши /help.\n⛅️ Вызвать функцию погоды можно нажав кнопку ниже, либо же введя команду /weather_menu."}
+{"timestamp": "05:09:31.403", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:31.407", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:31.411", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:31.489", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "feed_update", "message": "Update id=770794325 is handled. Duration 120 ms by bot id=8364617303"}
+{"timestamp": "05:09:32.407", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "load_message 🔄 Загрузка..."}
+{"timestamp": "05:09:32.411", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.415", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.418", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.422", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.426", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.429", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.433", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.437", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.440", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.444", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.449", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.453", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.457", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.461", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.465", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.469", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.472", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.476", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.480", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.484", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.488", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.492", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.496", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.500", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.504", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.508", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.511", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.515", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.519", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.524", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.529", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:32.533", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:32.536", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:32.612", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "feed_update", "message": "Update id=770794326 is handled. Duration 206 ms by bot id=8364617303"}
+{"timestamp": "05:09:43.152", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "load_message 🔄 Загрузка..."}
+{"timestamp": "05:09:43.156", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:43.160", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:43.165", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:43.169", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:43.173", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:43.176", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:43.180", "level": "DEBUG", "filename": "weather.py", "module": "logging", "class": "FileHandler", "def": "weather_callback_handler", "message": "Привет🗿👋 <b>Shayden</b>!\n💼 Тут будет меню выбора различных функций бота.\n🚑 Так же чтобы вывести все команды бота напиши /help.\n⛅️ Вызвать функцию погоды можно нажав кнопку ниже, либо же введя команду /weather_menu."}
+{"timestamp": "05:09:43.183", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Loading messages, key=RU_LN"}
+{"timestamp": "05:09:43.187", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "RESULT - <class 'dict'>"}
+{"timestamp": "05:09:43.190", "level": "DEBUG", "filename": "TextMessages.py", "module": "logging", "class": "FileHandler", "def": "get_message", "message": "Key 'RU_LN' loaded successfully."}
+{"timestamp": "05:09:43.265", "level": "INFO", "filename": "dispatcher.py", "module": "logging", "class": "FileHandler", "def": "feed_update", "message": "Update id=770794327 is handled. Duration 114 ms by bot id=8364617303"}
