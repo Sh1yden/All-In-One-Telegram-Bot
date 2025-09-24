@@ -2,11 +2,11 @@ import os
 import json
 
 # Место для импорта всех сервисов
-from src.services.OpenMeteo import OpenMeteo
-from src.services.GeocodingOMAPI import GeocodingOMAPI
-from src.services.VisualCrossing import VisualCrossing
-from src.services.WeatherAPI import WeatherAPI
-from src.services.YandexAPI import YandexAPI
+from src.services.GeocodingOMAPI import GeocodingOMAPI  # GEO POS
+from src.services.OpenMeteo import OpenMeteo  # API
+from src.services.VisualCrossing import VisualCrossing  # API
+from src.services.WeatherAPI import WeatherAPI  # API
+from src.services.YandexAPI import YandexAPI  # API
 
 from src.config.AppConfig import AppConfig
 from src.core.Logging import get_logger

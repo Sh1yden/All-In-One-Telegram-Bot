@@ -36,13 +36,8 @@ async def device_callback_handler(
 
     if callback_data.action == "device_pc":
 
-        # TODO сделать ручное определение на пк
-
-        # ! Заглушка
-        await message.answer(
-            text=get_message("RU_LN")["location_m"]["message1"],
-            reply_markup=get_inl_btns_location(),
-        )
+        # Сообщение ожидания названии локации
+        await message.answer(text=get_message("RU_LN")["location_m"]["message1pc"])
 
 
 @router.message(Command("device"))

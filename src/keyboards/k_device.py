@@ -20,5 +20,4 @@ def get_inl_btns_device() -> InlineKeyboardMarkup:
         ),
     )
 
-    builder.adjust(1)  # одна кнопка в строке
-    return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
+    return builder.as_markup(resize_keyboard=True)
