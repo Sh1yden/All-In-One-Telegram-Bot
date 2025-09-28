@@ -1,15 +1,26 @@
-from aiogram.types import Message
+from aiogram.types import Message, User
+from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram import Router
 
 from aiogram import F
 from aiogram.types import Location, ReplyKeyboardRemove
 
+from src.config.AppConfig import AppConfig
+from src.services.UserDataService import user_data_service
+
+from src.services.GeocodingOMAPI import GeocodingOMAPI
+
+from src.states.LocationState import LocationState
+from src.utils.state_helpers import clear_state
+
 from src.keyboards.k_location import get_inl_btns_location
 from src.config.TextMessages import get_message
 
 
 router = Router()
+_appcfg = AppConfig()
+_geoapi = GeocodingOMAPI()
 
 
 # Ответ на команду
@@ -17,37 +28,91 @@ router = Router()
 async def request_location(message: Message):
 
     await message.answer(
-        get_message("RU_LN")["location_m"]["message1"],
+        get_message("RU_LN")["location_m"]["message_send_loc_phone"],
         reply_markup=get_inl_btns_location(),
     )
 
 
-# Ответ на отправку геолокации только с телефона
-@router.message(F.location)
-async def handle_location_phone(message: Message):
+# Ответ на отправку геолокации только с ТЕЛЕФОНА
+@router.message(LocationState.waiting_for_city_phone, F.location)
+async def handle_location_phone(message: Message, state: FSMContext):
 
     location_phone: Location | None = message.location
+    user: User | None = message.from_user
 
     lat = location_phone.latitude
     lon = location_phone.longitude
 
-    await message.answer(
-        f"{get_message("RU_LN")["location_m"]["message2"]}{lat}{get_message("RU_LN")["location_m"]["message3"]}{lon}",
-        reply_markup=ReplyKeyboardRemove(),  # убираем клавиатуру
+    # Сохранить данные в файл
+    success = user_data_service.save_user_location(
+        user_id=user.id,
+        username=user.username or "",
+        full_name=user.full_name or "Unknown",
+        location_type="phone",
+        latitude=lat,
+        longitude=lon,
     )
 
-    # Теперь можно передать координаты
-    # weather = await GeocodingOMAPI.get_location_phone(lat, lon)
+    if success:
+        await message.answer(
+            f"{get_message("RU_LN")["location_m"]["message_good_loc_w_phone"]}{lat}{get_message("RU_LN")["location_m"]["message_good_loc_l_phone"]}{lon}",
+            reply_markup=ReplyKeyboardRemove(),  # убираем клавиатуру
+        )
+    else:
+        await message.answer(get_message("RU_LN")["location_m"]["message_error"])
+
+    # Очистить состояние
+    await clear_state(state)
 
 
-@router.message(F.text)
-async def handle_location_pc(message: Message):
+# Ответ на отправку геолокации только с ПК
+@router.message(LocationState.waiting_for_city_pc, F.text)
+async def handle_location_pc(message: Message, state: FSMContext):
 
     location_pc = message.text
+    user: User | None = message.from_user
 
-    await message.answer(
-        text=get_message("RU_LN")["location_m"]["message2pc"] + location_pc
+    # Проверить, что это не команда отмены
+    if location_pc == "❌ Отмена":
+        await clear_state(state)
+        await message.answer("Запрос локации отменен.")
+        return
+
+    cord = _geoapi.get_cord_from_pc(location_pc) or {}
+
+    # Сохранить данные в файл
+    success = user_data_service.save_user_location(
+        user_id=user.id,
+        username=user.username or "",
+        full_name=user.full_name or "Unknown",
+        location_type="pc",
+        latitude=cord["lat"],
+        longitude=cord["lon"],
     )
 
-    # Передача города
-    # weather = await GeocodingOMAPI.get_location_pc(location_pc)
+    if success:
+        # TODO сделать отображения названия города и показ кординат
+        # await message.answer(
+        #     f"{get_message("RU_LN")["location_m"]["message2"]}{lat}{get_message("RU_LN")["location_m"]["message3"]}{lon}",
+        #     reply_markup=ReplyKeyboardRemove(),  # убираем клавиатуру
+        # )
+        await message.answer(
+            text=get_message("RU_LN")["location_m"]["message_good_loc_city_pc"]
+            + location_pc
+        )
+    else:
+        await message.answer(get_message("RU_LN")["location_m"]["message_error"])
+
+    # Очистить состояние
+    await clear_state(state)
+
+
+# Обработка отмены
+@router.message(LocationState.waiting_for_city_phone, F.text == "❌ Отмена")
+@router.message(LocationState.waiting_for_city_pc, F.text == "❌ Отмена")
+async def handle_cancel_location(message: Message, state: FSMContext):
+    await clear_state(state)
+    await message.answer(
+        get_message("RU_LN")["location_m"]["message_cancel"],
+        reply_markup=ReplyKeyboardRemove(),
+    )

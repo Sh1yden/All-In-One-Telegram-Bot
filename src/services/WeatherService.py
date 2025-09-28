@@ -1,6 +1,8 @@
 import os
 import json
 
+from aiogram.fsm.context import FSMContext
+
 # Место для импорта всех сервисов
 from src.services.GeocodingOMAPI import GeocodingOMAPI  # GEO POS
 from src.services.OpenMeteo import OpenMeteo  # API
@@ -23,31 +25,31 @@ class WeatherService:
 
     # API
     @staticmethod
-    def get_weather_now():
+    async def get_weather_now() -> str:
+        return ""
+
+    @staticmethod
+    async def get_weather_hours():
         return
 
     @staticmethod
-    def get_weather_hours():
+    async def get_weather_5d():
         return
 
     @staticmethod
-    def get_weather_5d():
+    async def get_weather_day_night():
         return
 
     @staticmethod
-    def get_weather_day_night():
+    async def get_weather_rain():
         return
 
     @staticmethod
-    def get_weather_rain():
+    async def get_weather_wind_pressure():
         return
 
     @staticmethod
-    def get_weather_wind_pressure():
-        return
-
-    @staticmethod
-    def get_loading_message():
+    async def get_loading_message():
         return "🔄 Загрузка..."
 
 

@@ -53,7 +53,8 @@ def get_inl_btns_weather() -> InlineKeyboardMarkup:
     # 📍 Локация:
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][8] + "Ваш город",
+            text=get_message("RU_LN")["weather_m"]["buttons"][8]
+            + "Ваш город",  # ! заглушка
             callback_data=WeatherCallback(action="weather_location").pack(),
         ),
     )

@@ -20,7 +20,7 @@ async def command_start_handler(message: Message) -> None:
         full_name_user = html.bold(message.from_user.full_name)
         _lg.debug(f"{full_name_user}")
 
-        main_menu_text = f"""{get_message("RU_LN")["start_m"]["message1"]}{full_name_user or "Пользователь"}{get_message("RU_LN")["start_m"]["message2"]}"""
+        main_menu_text = f"""{get_message("RU_LN")["start_m"]["message_hello"]}{full_name_user or "Пользователь"}{get_message("RU_LN")["start_m"]["message_main_menu"]}"""
         _lg.debug(f"{main_menu_text}")
 
         await message.answer(

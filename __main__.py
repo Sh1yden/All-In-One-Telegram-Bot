@@ -4,6 +4,7 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from src.handlers.start import router as start_router
 from src.handlers.help import router as help_router
@@ -17,6 +18,7 @@ from src.config.Token import get_token
 
 
 # _appcfg = AppConfig()
+storage = MemoryStorage()
 
 _lg = get_logger()
 _lg.debug("Logger init.")
@@ -44,7 +46,8 @@ def create_bot() -> Bot | None:
 def create_dispatcher() -> Dispatcher | None:
     try:
         _lg.debug("Create Dispatcher.")
-        dp = Dispatcher()
+
+        dp = Dispatcher(storage=storage)
 
         dp.include_router(start_router)
         dp.include_router(help_router)
