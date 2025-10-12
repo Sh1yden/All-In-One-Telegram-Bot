@@ -7,7 +7,8 @@ from src.callbacks.WeatherCallback import WeatherCallback  # CALLBACK
 
 from src.services.UserDataService import user_data_service
 from src.services.WeatherService import WeatherService  # API # TODO
-from src.services.GeocodingOMAPI import GeocodingOMAPI  # API
+
+# from src.services.GeocodingOMAPI import GeocodingOMAPI  # API
 
 
 from src.keyboards.k_weather import get_inl_btns_weather  # BTN
@@ -44,7 +45,7 @@ async def weather_callback_handler(
 
         await message.edit_text(
             text=get_message("RU_LN")["weather_m"]["message"],
-            reply_markup=get_inl_btns_weather(),
+            reply_markup=get_inl_btns_weather(user.id),
         )
 
     # 🌡 Сейчас
@@ -52,7 +53,9 @@ async def weather_callback_handler(
 
         # Проверить наличие локации в файле
         if not user_data_service.user_has_location(user.id):
-            await message.answer("❌ Сначала укажите локацию")
+            await message.answer(
+                get_message("RU_LN")["location_m"]["message_loc_not_post"]
+            )
             return
 
         await WeatherService.get_weather_now()
@@ -98,8 +101,9 @@ async def weather_callback_handler(
         else:
             # Показать сохраненную локацию
             location_display = user_data_service.format_user_location(user.id)
+            # TODO добавить изменение локации и её сброс
             await message.answer(
-                f"{get_message("RU_LN")["location_m"]["message_current_loc"]}{location_display}"
+                text=location_display,
             )
 
     # 🔙 Назад
@@ -120,7 +124,9 @@ async def weather_callback_handler(
 @router.message(Command("weather_menu"))
 async def command_weather_handler(message: Message):
 
+    user: User | None = message.from_user
+
     await message.answer(
         text=get_message("RU_LN")["weather_m"]["message"],
-        reply_markup=get_inl_btns_weather(),
+        reply_markup=get_inl_btns_weather(user.id),
     )

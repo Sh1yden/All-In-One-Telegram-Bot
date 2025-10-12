@@ -7,7 +7,7 @@ from src.callbacks.DeviceCallback import DeviceCallback
 from src.states.LocationState import LocationState
 
 from src.keyboards.k_device import get_inl_btns_device
-from src.keyboards.k_location import get_inl_btns_location  # REPLY BTNS # TODO
+from src.keyboards.k_location import get_inl_btns_location  # REPLY BTNS
 from src.core.Logging import get_logger
 from src.config.TextMessages import get_message
 

@@ -4,8 +4,15 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from src.callbacks.WeatherCallback import WeatherCallback
 from src.config.TextMessages import get_message
 
+from src.services.NominatimAPI import get_city_from_cord
+from src.core.Logging import get_logger
+from src.services.UserDataService import UserDataService
 
-def get_inl_btns_weather() -> InlineKeyboardMarkup:
+_user_ds = UserDataService()
+_lg = get_logger()
+
+
+def get_inl_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     """Кнопки снизу сообщения после команды /weather."""
 
     builder = InlineKeyboardBuilder()
@@ -51,10 +58,15 @@ def get_inl_btns_weather() -> InlineKeyboardMarkup:
     )
 
     # 📍 Локация:
+    city = _user_ds.get_user_info(user_id)
+    city_text = get_message("RU_LN")["location_m"]["message_loc_not_post"]
+
+    if city and isinstance(city, dict) and city.get("location", {}).get("city"):
+        city_text = city["location"]["city"]
+
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][8]
-            + "Ваш город",  # ! заглушка
+            text=get_message("RU_LN")["weather_m"]["buttons"][8] + city_text,
             callback_data=WeatherCallback(action="weather_location").pack(),
         ),
     )

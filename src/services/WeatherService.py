@@ -4,7 +4,7 @@ import json
 from aiogram.fsm.context import FSMContext
 
 # Место для импорта всех сервисов
-from src.services.GeocodingOMAPI import GeocodingOMAPI  # GEO POS
+# from src.services.GeocodingOMAPI import GeocodingOMAPI  # GEO POS
 from src.services.OpenMeteo import OpenMeteo  # API
 from src.services.VisualCrossing import VisualCrossing  # API
 from src.services.WeatherAPI import WeatherAPI  # API

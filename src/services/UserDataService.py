@@ -4,6 +4,9 @@ from typing import Dict, Any
 
 from src.config.AppConfig import AppConfig
 
+# from src.services.GeocodingOMAPI import GeocodingOMAPI
+from src.services.NominatimAPI import get_city_from_cord
+
 from src.core.Logging import get_logger
 from src.config.TextMessages import get_message
 
@@ -12,11 +15,12 @@ class UserDataService:
     """Сервис для работы с пользовательскими данными (локация, имя и т.д.)"""
 
     def __init__(self):
+
         self._lg = get_logger()
         self._appcfg = AppConfig()
 
         # Путь к файлу с пользовательскими данными
-        self._USR_DATA_FILE = Path(self._appcfg._SAVE_SET_DIR / "users_data.json")
+        self._USR_DATA_FILE = Path(self._appcfg.get_save_set_dir, "users_data.json")
 
     def save_user_location(
         self,
@@ -170,13 +174,17 @@ class UserDataService:
 
             lat = location.get("latitude", 0)
             lon = location.get("longitude", 0)
-            return f"{get_message("RU_LN")["location_m"]["message_good_loc_w_phone"]}{lat}{get_message("RU_LN")["location_m"]["message_good_loc_l_phone"]}{lon}"
+            city = location.get("city")
+
+            return f"{get_message("RU_LN")["location_m"]["message_good_loc_city_pc"]}{city}\n{get_message("RU_LN")["location_m"]["message_good_loc_w_phone"]}{lat}{get_message("RU_LN")["location_m"]["message_good_loc_l_phone"]}{lon}"
 
         elif location["type"] == "pc":
 
             lat = location.get("latitude", 0)
             lon = location.get("longitude", 0)
-            return f"{get_message("RU_LN")["location_m"]["message_good_loc_w_phone"]}{lat}{get_message("RU_LN")["location_m"]["message_good_loc_l_phone"]}{lon}"
+            city = location.get("city")
+
+            return f"{get_message("RU_LN")["location_m"]["message_good_loc_city_pc"]}{city}\n{get_message("RU_LN")["location_m"]["message_good_loc_w_phone"]}{lat}{get_message("RU_LN")["location_m"]["message_good_loc_l_phone"]}{lon}"
 
         else:
             return get_message("RU_LN")["location_m"]["message_unknown_loc"]
@@ -229,6 +237,13 @@ if __name__ == "__main__":
         latitude=55.7558,
         longitude=37.6176,
     )
+
+    info = service.get_user_info(13213123)
+    if info is None:
+        service._lg.debug(f"INFO IS NONE!!!!")
+    else:
+        ifo = info.get("location")
+        service._lg.debug(f"USER info: {ifo}")
 
     # Тест получения локации
     location = service.get_user_location(123456)

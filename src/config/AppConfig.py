@@ -147,11 +147,15 @@ class AppConfig:
             self._lg = get_logger()
             self._lg.debug("Logger init.")
 
-    # ===== PROPERTY METHODS - LOGGING CONFIGURATION / МЕТОДЫ-СВОЙСТВА - КОНФИГУРАЦИЯ ЛОГИРОВАНИЯ =====
+    # ===== PROPERTY METHODS - CONFIGURATION / МЕТОДЫ-СВОЙСТВА - КОНФИГУРАЦИЯ =====
 
     @property
     def save_set_msg_file(self) -> Path:
         return self._SAVE_SET_MSG_FILE
+
+    @property
+    def get_save_set_dir(self) -> Path:
+        return self._SAVE_SET_DIR
 
     @property
     def save_lg_dir(self) -> Path:

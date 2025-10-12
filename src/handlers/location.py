@@ -7,9 +7,11 @@ from aiogram import F
 from aiogram.types import Location, ReplyKeyboardRemove
 
 from src.config.AppConfig import AppConfig
+from src.core.Logging import get_logger
 from src.services.UserDataService import user_data_service
 
-from src.services.GeocodingOMAPI import GeocodingOMAPI
+from src.services.GeocodingOMAPI import get_cord_from_city
+from src.services.NominatimAPI import get_city_from_cord
 
 from src.states.LocationState import LocationState
 from src.utils.state_helpers import clear_state
@@ -20,12 +22,13 @@ from src.config.TextMessages import get_message
 
 router = Router()
 _appcfg = AppConfig()
-_geoapi = GeocodingOMAPI()
+_lg = get_logger()
 
 
 # Ответ на команду
 @router.message(Command("location"))
 async def request_location(message: Message):
+    # TODO разделить на телефон и пк
 
     await message.answer(
         get_message("RU_LN")["location_m"]["message_send_loc_phone"],
@@ -36,75 +39,85 @@ async def request_location(message: Message):
 # Ответ на отправку геолокации только с ТЕЛЕФОНА
 @router.message(LocationState.waiting_for_city_phone, F.location)
 async def handle_location_phone(message: Message, state: FSMContext):
+    try:
+        _lg.debug("Start handle location on phone.")
+        location_phone: Location | None = message.location
+        user: User | None = message.from_user
 
-    location_phone: Location | None = message.location
-    user: User | None = message.from_user
+        lat = location_phone.latitude
+        lon = location_phone.longitude
+        city = get_city_from_cord(lat, lon, user_agent="TestApp/1.0")
+        _lg.debug(f"User city on phone is - {city}.")
 
-    lat = location_phone.latitude
-    lon = location_phone.longitude
-
-    # Сохранить данные в файл
-    success = user_data_service.save_user_location(
-        user_id=user.id,
-        username=user.username or "",
-        full_name=user.full_name or "Unknown",
-        location_type="phone",
-        latitude=lat,
-        longitude=lon,
-    )
-
-    if success:
-        await message.answer(
-            f"{get_message("RU_LN")["location_m"]["message_good_loc_w_phone"]}{lat}{get_message("RU_LN")["location_m"]["message_good_loc_l_phone"]}{lon}",
-            reply_markup=ReplyKeyboardRemove(),  # убираем клавиатуру
+        # Сохранить данные в файл
+        success = user_data_service.save_user_location(
+            user_id=user.id,
+            username=user.username or "",
+            full_name=user.full_name or "Unknown",
+            location_type="phone",
+            city=city,
+            latitude=lat,
+            longitude=lon,
         )
-    else:
-        await message.answer(get_message("RU_LN")["location_m"]["message_error"])
 
-    # Очистить состояние
-    await clear_state(state)
+        if success:
+            await message.answer(
+                f"{get_message("RU_LN")["location_m"]["message_good_loc_w_phone"]}{lat}{get_message("RU_LN")["location_m"]["message_good_loc_l_phone"]}{lon}",
+                reply_markup=ReplyKeyboardRemove(),  # убираем клавиатуру
+            )
+        else:
+            await message.answer(get_message("RU_LN")["location_m"]["message_error"])
+
+        # Очистить состояние
+        await clear_state(state)
+    except Exception as e:
+        _lg.error(f"Internal error: {e}.")
 
 
 # Ответ на отправку геолокации только с ПК
 @router.message(LocationState.waiting_for_city_pc, F.text)
 async def handle_location_pc(message: Message, state: FSMContext):
+    try:
+        _lg.debug("Start handle location on phone.")
 
-    location_pc = message.text
-    user: User | None = message.from_user
+        location_pc = message.text
+        user: User | None = message.from_user
 
-    # Проверить, что это не команда отмены
-    if location_pc == "❌ Отмена":
-        await clear_state(state)
-        await message.answer("Запрос локации отменен.")
-        return
+        # Проверить, что это не команда отмены
+        if location_pc == "❌ Отмена":
+            await clear_state(state)
+            await message.answer(
+                text=get_message("RU_LN")["location_m"]["message_cancel"]
+            )
+            return
 
-    cord = _geoapi.get_cord_from_pc(location_pc) or {}
+        cord = get_cord_from_city(location_pc) or {}
+        city = get_city_from_cord(cord["lat"], cord["lon"], user_agent="TestApp/1.0")
+        _lg.debug(f"User city on pc is - {city}.")
 
-    # Сохранить данные в файл
-    success = user_data_service.save_user_location(
-        user_id=user.id,
-        username=user.username or "",
-        full_name=user.full_name or "Unknown",
-        location_type="pc",
-        latitude=cord["lat"],
-        longitude=cord["lon"],
-    )
-
-    if success:
-        # TODO сделать отображения названия города и показ кординат
-        # await message.answer(
-        #     f"{get_message("RU_LN")["location_m"]["message2"]}{lat}{get_message("RU_LN")["location_m"]["message3"]}{lon}",
-        #     reply_markup=ReplyKeyboardRemove(),  # убираем клавиатуру
-        # )
-        await message.answer(
-            text=get_message("RU_LN")["location_m"]["message_good_loc_city_pc"]
-            + location_pc
+        # Сохранить данные в файл
+        success = user_data_service.save_user_location(
+            user_id=user.id,
+            username=user.username or "",
+            full_name=user.full_name or "Unknown",
+            location_type="pc",
+            city=city,
+            latitude=cord["lat"],
+            longitude=cord["lon"],
         )
-    else:
-        await message.answer(get_message("RU_LN")["location_m"]["message_error"])
 
-    # Очистить состояние
-    await clear_state(state)
+        if success:
+            await message.answer(
+                text=get_message("RU_LN")["location_m"]["message_good_loc_city_pc"]
+                + location_pc
+            )
+        else:
+            await message.answer(get_message("RU_LN")["location_m"]["message_error"])
+
+        # Очистить состояние
+        await clear_state(state)
+    except Exception as e:
+        _lg.error(f"Internal error: {e}.")
 
 
 # Обработка отмены
