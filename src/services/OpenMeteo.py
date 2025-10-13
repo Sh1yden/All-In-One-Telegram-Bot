@@ -15,6 +15,19 @@ class OpenMeteo:
 
         self._appcfg = AppConfig()
 
+    def get_weather_now_api(self, lat: float, lon: float):
+        try:
+            req = requests.get(
+                f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=&current=temperature_2m"
+            )
+
+            data = req.json()
+
+            return data
+
+        except Exception as e:
+            self._lg.error(f"Internal error: {e}")
+
 
 if __name__ == "__main__":
     om = OpenMeteo()

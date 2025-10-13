@@ -1,5 +1,4 @@
 from aiogram.types import Message, CallbackQuery, InaccessibleMessage, User
-from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram import Router
 
@@ -12,6 +11,7 @@ from src.services.WeatherService import WeatherService  # API # TODO
 
 
 from src.keyboards.k_weather import get_inl_btns_weather  # BTN
+from src.keyboards.k_weather_now import get_inl_btns_weather_now  # BTN
 from src.keyboards.k_start import get_inl_btns_start  # BTN
 from src.keyboards.k_device import get_inl_btns_device  # BTN
 from src.core.Logging import get_logger
@@ -25,7 +25,7 @@ _lg = get_logger()
 # обработка нажатия кнопки Погода
 @router.callback_query(WeatherCallback.filter())
 async def weather_callback_handler(
-    callback: CallbackQuery, callback_data: WeatherCallback, state: FSMContext
+    callback: CallbackQuery, callback_data: WeatherCallback
 ):
 
     # load_msg = WeatherService.get_loading_message()
@@ -58,39 +58,73 @@ async def weather_callback_handler(
             )
             return
 
-        await WeatherService.get_weather_now()
+        all_w_info = WeatherService().get_weather_now(user.id)
+        _lg.debug(f"ALL INFO weather now serv - {all_w_info}")
+
+        await message.edit_text(
+            text=str(all_w_info), reply_markup=get_inl_btns_weather_now()
+        )
 
     # 📊 Почасовой
     if callback_data.action == "weather_hours":
+        await message.edit_text(
+            text=get_message("RU_LN")["service_m"]["message_in_development"],
+            reply_markup=get_inl_btns_weather_now(),
+        )
         await WeatherService.get_weather_hours()
 
     # 📆 На 5 дней
     if callback_data.action == "weather_5d":
+        await message.edit_text(
+            text=get_message("RU_LN")["service_m"]["message_in_development"],
+            reply_markup=get_inl_btns_weather_now(),
+        )
         await WeatherService.get_weather_5d()
 
     # 🌅 Утро / 🌇 Вечер
     if callback_data.action == "weather_day_night":
+        await message.edit_text(
+            text=get_message("RU_LN")["service_m"]["message_in_development"],
+            reply_markup=get_inl_btns_weather_now(),
+        )
         await WeatherService.get_weather_day_night()
 
     # 🌦 Осадки
     if callback_data.action == "weather_rain":
+        await message.edit_text(
+            text=get_message("RU_LN")["service_m"]["message_in_development"],
+            reply_markup=get_inl_btns_weather_now(),
+        )
         await WeatherService.get_weather_rain()
 
     # 🧭 Ветер/давление
     if callback_data.action == "weather_wind_pressure":
+        await message.edit_text(
+            text=get_message("RU_LN")["service_m"]["message_in_development"],
+            reply_markup=get_inl_btns_weather_now(),
+        )
         await WeatherService.get_weather_wind_pressure()
 
     # ⚙️ Настроить
     if callback_data.action == "weather_settings":
-        pass
+        await message.edit_text(
+            text=get_message("RU_LN")["service_m"]["message_in_development"],
+            reply_markup=get_inl_btns_weather_now(),
+        )
 
     # Функции на потом
     # 🔔 Подписка
     if callback_data.action == "weather_subscription":
-        pass
+        await message.edit_text(
+            text=get_message("RU_LN")["service_m"]["message_in_development"],
+            reply_markup=get_inl_btns_weather_now(),
+        )
 
     # 📍 Локация:
     if callback_data.action == "weather_location":
+
+        # TODO сделать так чтобы не писало новое сообщение а изменялось меню на это
+        # TODO сделать чтобы после взаимодействия с меню локации оно заменялось обратно на погодное
 
         if not user_data_service.user_has_location(user.id):
             # Переброс на выбор платформы для правильного определения местоположения
@@ -120,8 +154,8 @@ async def weather_callback_handler(
         )
 
 
-# обработка команды /weather_menu
-@router.message(Command("weather_menu"))
+# обработка команды /weatherMenu
+@router.message(Command("weatherMenu"))
 async def command_weather_handler(message: Message):
 
     user: User | None = message.from_user

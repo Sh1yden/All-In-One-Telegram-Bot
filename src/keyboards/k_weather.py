@@ -4,12 +4,9 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from src.callbacks.WeatherCallback import WeatherCallback
 from src.config.TextMessages import get_message
 
-from src.services.NominatimAPI import get_city_from_cord
-from src.core.Logging import get_logger
 from src.services.UserDataService import UserDataService
 
 _user_ds = UserDataService()
-_lg = get_logger()
 
 
 def get_inl_btns_weather(user_id: int) -> InlineKeyboardMarkup:
