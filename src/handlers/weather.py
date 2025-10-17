@@ -2,18 +2,17 @@ from aiogram.types import Message, CallbackQuery, InaccessibleMessage, User
 from aiogram.filters import Command
 from aiogram import Router
 
-from src.callbacks.WeatherCallback import WeatherCallback  # CALLBACK
+from src.callbacks.WeatherCallback import WeatherCallback
 
 from src.services.UserDataService import user_data_service
-from src.services.WeatherService import WeatherService  # API # TODO
+from src.services.WeatherService import WeatherService
+from src.services.GeocodingOMAPI import get_cord_from_city
+from src.services.NominatimAPI import get_city_from_cord
 
-# from src.services.GeocodingOMAPI import GeocodingOMAPI  # API
-
-
-from src.keyboards.k_weather import get_inl_btns_weather  # BTN
-from src.keyboards.k_weather_now import get_inl_btns_weather_now  # BTN
-from src.keyboards.k_start import get_inl_btns_start  # BTN
-from src.keyboards.k_device import get_inl_btns_device  # BTN
+from src.keyboards.k_weather import get_inl_btns_weather
+from src.keyboards.k_weather_now import get_inl_btns_weather_now
+from src.keyboards.k_start import get_inl_btns_start
+from src.keyboards.k_device import get_inl_btns_device
 from src.core.Logging import get_logger
 from src.config.TextMessages import get_message
 
@@ -57,6 +56,26 @@ async def weather_callback_handler(
                 get_message("RU_LN")["location_m"]["message_loc_not_post"]
             )
             return
+
+        # ✅ Проверить есть ли NULL значения
+        if user_data_service._has_null_location(user.id):
+            _lg.info(
+                f"Found NULL values in location for user {user.id}, attempting to fix..."
+            )
+
+            # Пытаемся исправить
+            if user_data_service._fix_null_location(user.id):
+                _lg.info(f"Successfully fixed NULL location for user {user.id}")
+            else:
+                _lg.warning(f"Could not fix NULL location for user {user.id}")
+
+                await message.answer(
+                    text=get_message("RU_LN")["location_m"]["message_null_error"]
+                    + "\n"
+                    + get_message("RU_LN")["device_m"]["message"],
+                    reply_markup=get_inl_btns_device(),
+                )
+                return
 
         all_w_info = WeatherService().get_weather_now(user.id)
         _lg.debug(f"ALL INFO weather now serv - {all_w_info}")
@@ -127,18 +146,28 @@ async def weather_callback_handler(
         # TODO сделать чтобы после взаимодействия с меню локации оно заменялось обратно на погодное
 
         if not user_data_service.user_has_location(user.id):
-            # Переброс на выбор платформы для правильного определения местоположения
+            # Переброс на выбор платформы для определения местоположения
             await message.answer(
                 text=get_message("RU_LN")["device_m"]["message"],
                 reply_markup=get_inl_btns_device(),
             )
         else:
-            # Показать сохраненную локацию
-            location_display = user_data_service.format_user_location(user.id)
-            # TODO добавить изменение локации и её сброс
-            await message.answer(
-                text=location_display,
-            )
+            # ✅ Проверяем есть ли NULL значения
+            if user_data_service._has_null_location(user.id):
+                _lg.info(f"Found NULL values in location for user {user.id}")
+
+                await message.answer(
+                    text=get_message("RU_LN")["location_m"]["message_null_error"]
+                    + "\n"
+                    + get_message("RU_LN")["device_m"]["message"],
+                    reply_markup=get_inl_btns_device(),
+                )
+            else:
+                # Показать сохраненную локацию
+                location_display = user_data_service.format_user_location(user.id)
+                await message.answer(
+                    text=location_display,
+                )
 
     # 🔙 Назад
     if callback_data.action == "weather_get_back":

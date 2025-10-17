@@ -16,7 +16,7 @@ from src.services.NominatimAPI import get_city_from_cord
 from src.states.LocationState import LocationState
 from src.utils.state_helpers import clear_state
 
-from src.keyboards.k_location import get_inl_btns_location
+from src.keyboards.k_device import get_inl_btns_device
 from src.config.TextMessages import get_message
 
 
@@ -28,12 +28,34 @@ _lg = get_logger()
 # Ответ на команду
 @router.message(Command("location"))
 async def request_location(message: Message):
-    # TODO разделить на телефон и пк
 
-    await message.answer(
-        get_message("RU_LN")["location_m"]["message_send_loc_phone"],
-        reply_markup=get_inl_btns_location(),
-    )
+    # TODO копия кода с weather callback'a - weather_location понять как не копировать код и переделать
+
+    user: User | None = message.from_user
+
+    if not user_data_service.user_has_location(user.id):
+        # Переброс на выбор платформы для определения местоположения
+        await message.answer(
+            text=get_message("RU_LN")["device_m"]["message"],
+            reply_markup=get_inl_btns_device(),
+        )
+    else:
+        # ✅ Проверяем есть ли NULL значения
+        if user_data_service._has_null_location(user.id):
+            _lg.info(f"Found NULL values in location for user {user.id}")
+
+            await message.answer(
+                text=get_message("RU_LN")["location_m"]["message_null_error"]
+                + "\n"
+                + get_message("RU_LN")["device_m"]["message"],
+                reply_markup=get_inl_btns_device(),
+            )
+        else:
+            # Показать сохраненную локацию
+            location_display = user_data_service.format_user_location(user.id)
+            await message.answer(
+                text=location_display,
+            )
 
 
 # Ответ на отправку геолокации только с ТЕЛЕФОНА
@@ -43,6 +65,11 @@ async def handle_location_phone(message: Message, state: FSMContext):
         _lg.debug("Start handle location on phone.")
         location_phone: Location | None = message.location
         user: User | None = message.from_user
+
+        if not location_phone:
+            await message.answer(get_message("RU_LN")["location_m"]["message_error"])
+            await clear_state(state)
+            return
 
         lat = location_phone.latitude
         lon = location_phone.longitude
@@ -78,13 +105,13 @@ async def handle_location_phone(message: Message, state: FSMContext):
 @router.message(LocationState.waiting_for_city_pc, F.text)
 async def handle_location_pc(message: Message, state: FSMContext):
     try:
-        _lg.debug("Start handle location on phone.")
+        _lg.debug("Start handle location on PC.")
 
         location_pc = message.text
         user: User | None = message.from_user
 
         # Проверить, что это не команда отмены
-        if location_pc == "❌ Отмена":
+        if location_pc == get_message("RU_LN")["location_m"]["buttons"][1]:
             await clear_state(state)
             await message.answer(
                 text=get_message("RU_LN")["location_m"]["message_cancel"]
@@ -121,8 +148,14 @@ async def handle_location_pc(message: Message, state: FSMContext):
 
 
 # Обработка отмены
-@router.message(LocationState.waiting_for_city_phone, F.text == "❌ Отмена")
-@router.message(LocationState.waiting_for_city_pc, F.text == "❌ Отмена")
+@router.message(
+    LocationState.waiting_for_city_phone,
+    F.text == get_message("RU_LN")["location_m"]["buttons"][1],
+)
+@router.message(
+    LocationState.waiting_for_city_pc,
+    F.text == get_message("RU_LN")["location_m"]["buttons"][1],
+)
 async def handle_cancel_location(message: Message, state: FSMContext):
     await clear_state(state)
     await message.answer(

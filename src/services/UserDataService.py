@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 from src.config.AppConfig import AppConfig
 
-# from src.services.GeocodingOMAPI import GeocodingOMAPI
+# from src.services.GeocodingOMAPI import get_cord_from_city
 from src.services.NominatimAPI import get_city_from_cord
 
 from src.core.Logging import get_logger
@@ -88,6 +88,71 @@ class UserDataService:
 
         except Exception as e:
             self._lg.error(f"Error saving user location: {e}")
+            return False
+
+    def _has_null_location(self, user_id: int) -> bool:
+        """Проверить есть ли NULL значения в локации пользователя"""
+        location = user_data_service.get_user_location(user_id)
+
+        if not location:
+            return False
+
+        # Проверяем каждое поле на NULL
+        if (
+            location.get("city") is None
+            or location.get("latitude") is None
+            or location.get("longitude") is None
+        ):
+            return True
+
+        return False
+
+    def _fix_null_location(self, user_id: int) -> bool:
+        """
+        Исправить NULL значения в локации пользователя
+        Пытается получить данные через API на основе имеющихся координат
+        """
+        try:
+            location = user_data_service.get_user_location(user_id)
+
+            if not location:
+                self._lg.warning(f"No location found for user {user_id}")
+                return False
+
+            changes_made = False
+            lat = location.get("latitude")
+            lon = location.get("longitude")
+            city = location.get("city")
+
+            # Если есть координаты но нет города - получаем через reverse geocoding
+            if lat is not None and lon is not None and (city is None or city == ""):
+                try:
+                    city = get_city_from_cord(lat, lon, user_agent="TestApp/1.0")
+                    if city:
+                        self._lg.info(f"Fixed NULL city for user {user_id}: {city}")
+                        changes_made = True
+                except Exception as e:
+                    self._lg.warning(f"Failed to get city from coordinates: {e}")
+
+            # Если были изменения - перезаписываем локацию
+            if changes_made:
+                user_data = user_data_service.get_user_info(user_id)
+                if user_data:
+                    success = user_data_service.save_user_location(
+                        user_id=user_id,
+                        username=user_data.get("username", ""),
+                        full_name=user_data.get("full_name", "Unknown"),
+                        location_type=location.get("type", "phone"),
+                        city=city,
+                        latitude=lat,
+                        longitude=lon,
+                    )
+                    return success
+
+            return changes_made
+
+        except Exception as e:
+            self._lg.error(f"Error fixing NULL location: {e}")
             return False
 
     def get_user_location(self, user_id: int) -> Dict[str, Any] | None:
