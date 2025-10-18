@@ -55,15 +55,10 @@ def get_inl_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     )
 
     # 📍 Локация:
-    city = _user_ds.get_user_info(user_id)
-    city_text = get_message("RU_LN")["location_m"]["message_loc_not_post"]
-
-    if city and isinstance(city, dict) and city.get("location", {}).get("city"):
-        city_text = city["location"]["city"]
-
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][8] + city_text,
+            text=get_message("RU_LN")["weather_m"]["buttons"][8]
+            + _user_ds.get_usr_one_loc_par(user_id, "city"),
             callback_data=WeatherCallback(action="weather_location").pack(),
         ),
     )

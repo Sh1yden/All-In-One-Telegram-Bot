@@ -184,6 +184,22 @@ class UserDataService:
             self._lg.error(f"Error getting user location: {e}")
             return None
 
+    def get_usr_one_loc_par(self, user_id: int, loc_key: str) -> str:
+        try:
+            par = user_data_service.get_user_location(user_id) or {}
+            # Если город не указан
+            par_text = get_message("RU_LN")["location_m"]["message_loc_not_post"]
+
+            # Проверка на то указан ли город
+            if par and isinstance(par, dict) and par.get(loc_key):
+                par_text = par[loc_key]
+
+            return par_text
+
+        except Exception as e:
+            self._lg.error(f"Error getting user info: {e}")
+            return get_message("RU_LN")["location_m"]["message_loc_not_post"]
+
     def get_user_info(self, user_id: int) -> Dict[str, Any] | None:
         """
         Получить полную информацию о пользователе
@@ -299,11 +315,12 @@ if __name__ == "__main__":
         username="test_user",
         full_name="Test User",
         location_type="phone",
+        city="Курск",
         latitude=55.7558,
         longitude=37.6176,
     )
 
-    info = service.get_user_info(13213123)
+    info = service.get_user_info(123456)
     if info is None:
         service._lg.debug(f"INFO IS NONE!!!!")
     else:
@@ -312,8 +329,12 @@ if __name__ == "__main__":
 
     # Тест получения локации
     location = service.get_user_location(123456)
-    print(f"Location: {location}")
+    service._lg.debug(f"Location: {location}")
+
+    # Тест получения одного параметра локации
+    one_par = service.get_usr_one_loc_par(123456, "c")
+    service._lg.debug(f"One par: {one_par}")
 
     # Тест форматирования
     formatted = service.format_user_location(123456)
-    print(f"Formatted: {formatted}")
+    service._lg.debug(f"Formatted: {formatted}")

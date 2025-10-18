@@ -18,7 +18,7 @@ class OpenMeteo:
     def get_weather_now_api(self, lat: float, lon: float):
         try:
             req = requests.get(
-                f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=&current=temperature_2m"
+                f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=&current=temperature_2m,is_day,relative_humidity_2m,weather_code,cloud_cover,wind_speed_10m&timezone=auto"
             )
 
             data = req.json()

@@ -77,12 +77,35 @@ async def weather_callback_handler(
                 )
                 return
 
-        all_w_info = WeatherService().get_weather_now(user.id)
-        _lg.debug(f"ALL INFO weather now serv - {all_w_info}")
+        wn_all_ser_dict = WeatherService().get_weather_now(user.id) or {}
 
-        await message.edit_text(
-            text=str(all_w_info), reply_markup=get_inl_btns_weather_now()
+        _lg.debug(f"ALL INFO weather now ser - {wn_all_ser_dict}")
+
+        day_or_night_emoji = (
+            get_message("RU_LN")["weather_now_m"]["day_or_night_emoji"][0]
+            if bool(wn_all_ser_dict["OpenMeteo"]["current"]["is_day"])
+            else get_message("RU_LN")["weather_now_m"]["day_or_night_emoji"][1]
         )
+
+        wnm = (
+            # Header
+            get_message("RU_LN")["weather_now_m"]["message_header"]
+            .replace("{city}", user_data_service.get_usr_one_loc_par(user.id, "city"))
+            .replace("{time}", wn_all_ser_dict["OpenMeteo"]["current"]["time"][11:])
+            .replace("{day_or_night_emoji}", day_or_night_emoji)
+            + "\n"
+            + "\n"
+            # Average 2
+            + get_message("RU_LN")["weather_now_m"]["message_average"]
+            + "\n"
+            + get_message("RU_LN")["weather_now_m"]["message_average_filtered"]
+            + "\n"
+            # Title
+            + get_message("RU_LN")["weather_now_m"]["message_section_title"]
+            + "\n"
+        )
+
+        await message.edit_text(text=wnm, reply_markup=get_inl_btns_weather_now())
 
     # 📊 Почасовой
     if callback_data.action == "weather_hours":
@@ -165,6 +188,7 @@ async def weather_callback_handler(
             else:
                 # Показать сохраненную локацию
                 location_display = user_data_service.format_user_location(user.id)
+
                 await message.answer(
                     text=location_display,
                 )

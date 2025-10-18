@@ -30,12 +30,13 @@
       ]
     },
     "weather_now_m": {
-      "message_header": "🌡 Погода в {city} на {time}:",
-      "message_average": "☯️ Средняя: {avg_temp}°C",
-      "message_average_filtered": "☯️❗ Средняя без ошибочных данных: {avg_filtered}°C",
+      "day_or_night_emoji": ["☀️", "🌙"],
+      "message_header": "🌡 Погода в городе {city} на {time}{day_or_night_emoji}:",
+      "message_average": "☯️ Средняя: {avg_temp}{temp_unit}",
+      "message_average_filtered": "☯️❗ Средняя без ошибочных данных: {avg_filtered}{temp_unit}",
       "message_section_title": "⌛ Сейчас:",
-      "message_source_template": "{num}. {source_name}: {temp}°C",
-      "message_summary_template": "* 📖 Краткая сводка:\n🏙️ Условия: {condition}\n👤 Ощущается как: {feels_like}°C\n💧 Влажность: {humidity}%\n🌬️ Ветер: {wind} м/с",
+      "message_source_template": "{num}. {source_name}: {temp}{temp_unit}",
+      "message_summary_template": "* 📖 Краткая сводка:\n🏙️ Условия: {condition}\n👤 Ощущается как: {feels_like}{temp_unit}\n💧 Влажность: {humidity}{humidity_unit}\n🌬️ Ветер: {wind}{wind_unit}",
       "buttons": ["⏪ Назад"]
     },
     "device_m": {
