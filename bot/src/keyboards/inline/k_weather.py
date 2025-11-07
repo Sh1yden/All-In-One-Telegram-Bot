@@ -1,13 +1,14 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from fluentogram import TranslatorRunner
 
 from src.callbacks.WeatherCallback import WeatherCallback
 
 
-_user_ds = UserDataService()
+# _user_ds = UserDataService()
 
 
-def get_btns_weather(user_id: int) -> InlineKeyboardMarkup:
+def get_btns_weather(user_id: int, locale: TranslatorRunner) -> InlineKeyboardMarkup:
     """Кнопки снизу сообщения после команды /weather."""
 
     builder = InlineKeyboardBuilder()
@@ -15,11 +16,11 @@ def get_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     # 🌡 Сейчас     📊 Почасовой
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][0],
+            text=locale.button_weather_menu_now(),
             callback_data=WeatherCallback(action="weather_now").pack(),
         ),
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][1],
+            text=locale.button_weather_menu_hours(),
             callback_data=WeatherCallback(action="weather_hours").pack(),
         ),
     )
@@ -27,7 +28,7 @@ def get_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     # 🌅 Утро / 🌇 Вечер
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][3],
+            text=locale.button_weather_menu_day_night(),
             callback_data=WeatherCallback(action="weather_day_night").pack(),
         ),
     )
@@ -35,7 +36,7 @@ def get_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     # 📆 На 5 дней
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][2],
+            text=locale.button_weather_menu_5d(),
             callback_data=WeatherCallback(action="weather_5d").pack(),
         ),
     )
@@ -43,11 +44,11 @@ def get_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     # 🌦 Осадки     🧭 Ветер/давление
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][4],
+            text=locale.button_weather_menu_rain(),
             callback_data=WeatherCallback(action="weather_rain").pack(),
         ),
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][5],
+            text=locale.button_weather_menu_wind_pressure(),
             callback_data=WeatherCallback(action="weather_wind_pressure").pack(),
         ),
     )
@@ -55,8 +56,9 @@ def get_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     # 📍 Локация:
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][8]
-            + _user_ds.get_usr_one_loc_par(user_id, "city"),
+            text=locale.button_weather_menu_location()
+            # + _user_ds.get_usr_one_loc_par(user_id, "city"),
+            + "Ваша локация",
             callback_data=WeatherCallback(action="weather_location").pack(),
         ),
     )
@@ -64,11 +66,11 @@ def get_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     # ⚙️ Настроить  🔔 Подписка
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][6],
+            text=locale.button_weather_menu_settings(),
             callback_data=WeatherCallback(action="weather_settings").pack(),
         ),
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][7],
+            text=locale.button_weather_menu_subscription(),
             callback_data=WeatherCallback(action="weather_subscription").pack(),
         ),
     )
@@ -76,7 +78,7 @@ def get_btns_weather(user_id: int) -> InlineKeyboardMarkup:
     # 🔙 Назад
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][9],
+            text=locale.button_weather_menu_back(),
             callback_data=WeatherCallback(action="weather_get_back").pack(),
         ),
     )

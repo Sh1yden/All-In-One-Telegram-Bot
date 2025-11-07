@@ -29,7 +29,7 @@ def start_tuna(port: int) -> Tuple[str, subprocess.Popen]:
                     public_url = data["url"]
                     break
             except json.JSONDecodeError:
-                _lg.error("JSONDecodeError.")
+                _lg.critical("JSONDecodeError.")
                 continue
 
     if not public_url:
