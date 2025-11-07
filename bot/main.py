@@ -1,27 +1,42 @@
 import asyncio
-import os
-import logging
-from dotenv import load_dotenv
 
-load_dotenv()
+# import os
 
 from aiohttp import web
-
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from src.handlers import router as main_router
+from fluent_compiler.bundle import FluentBundle
+from fluentogram import TranslatorHub, FluentTranslator
+from fluentogram.exceptions import (
+    KeyNotFoundError,
+    FormatError,
+    RootTranslatorNotFoundError,
+)
 
+from src.middlewares.middlewares import TranslateMiddleware
+from src.utils import settings
+from src.handlers import router as main_router
+from src.utils import start_tuna
+import logging
+from src.core import get_logger
+
+
+storage = MemoryStorage()
+
+_lg = get_logger()
+_lg.debug("Logger init.")
 
 # Get Telegram bot Token
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TOKEN = settings.TELEGRAM_BOT_TOKEN
 
 # Webserver settings
-# For Docker, use 0.0.0.0 to bind to all interfaces
-WEB_SERVER_HOST = "0.0.0.0"
+# For Docker, use localhost to bind to all interfaces
+WEB_SERVER_HOST = "localhost"
 WEB_SERVER_PORT = 8080
 
 # Telegram webhook settings:
@@ -31,41 +46,41 @@ WEBHOOK_PATH = "/webhook"
 WEBHOOK_SECRET = "my-secret"
 
 # Redirect for global net:
-BASE_WEBHOOK_URL = os.getenv("TUNA_TUNNEL_URL")  # ! Менять при каждом запуске в .env
-
-storage = MemoryStorage()
-
-_lg = logging.getLogger()
-_lg.debug("Logger init.")
+BASE_WEBHOOK_URL, process = start_tuna(WEB_SERVER_PORT)
 
 
-def create_bot() -> Bot | None:
-    """
-    Create and configure Telegram bot
-
-    Returns:
-        Bot | None: Configured bot instance or None if error
-    """
+def create_translator_hub() -> TranslatorHub | None:
     try:
-        _lg.debug("Creating bot.")
+        _lg.debug("Creating a TranslatorHub.")
 
-        token = TOKEN
-
-        if not token:
-            _lg.critical("Token is empty or invalid")
-            return None
-
-        bot = Bot(
-            token=token,
-            default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        t_hub = TranslatorHub(
+            {"ru": ("ru",)},
+            translators=[
+                FluentTranslator(
+                    "ru",
+                    translator=FluentBundle.from_files(
+                        "ru-RU",
+                        filenames=[
+                            "bot/src/i18n/ru/text.ftl",
+                            "bot/src/i18n/ru/button.ftl",
+                        ],
+                    ),
+                )
+            ],
+            root_locale="ru",
         )
 
-        _lg.debug("Bot created successfully.")
-        return bot
+        _lg.info("TranslatorHub created successfully.")
+        return t_hub
 
+    except KeyNotFoundError as e:
+        print(f"Translation key not found: {e.key}")
+    except RootTranslatorNotFoundError as e:
+        print(f"Root locale translator missing: {e.root_locale}")
+    except FormatError as e:
+        print(f"Formatting error for key {e.key}: {e.original_error}")
     except Exception as e:
         _lg.critical(f"Internal error: {e}.")
-        return None
 
 
 def create_dispatcher() -> Dispatcher | None:
@@ -79,16 +94,17 @@ def create_dispatcher() -> Dispatcher | None:
         _lg.debug("Create Dispatcher.")
 
         # All handlers should be attached to the Router (or Dispatcher)
-        dp = Dispatcher(storage=storage)
+        dp = Dispatcher(storage=storage, t_hub=create_translator_hub())
 
         dp.include_router(main_router)
+        dp.message.outer_middleware(TranslateMiddleware())
+        dp.callback_query.outer_middleware(TranslateMiddleware())
 
-        _lg.debug("Dispatcher created successfully.")
+        _lg.info("Dispatcher created successfully.")
         return dp
 
     except Exception as e:
         _lg.critical(f"Internal error: {e}.")
-        return None
 
 
 async def on_startup_set_webhook(bot: Bot) -> None:
@@ -99,7 +115,34 @@ async def on_startup_set_webhook(bot: Bot) -> None:
     )
 
 
-async def main() -> None:
+def create_bot() -> Bot | None:
+    """
+    Create and configure Telegram bot
+
+    Returns:
+        Bot | None: Configured bot instance or None if error
+    """
+    try:
+        _lg.debug("Creating bot.")
+
+        if not TOKEN:
+            _lg.critical("Token is empty or invalid.")
+            return None
+
+        bot = Bot(
+            token=TOKEN,
+            default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        )
+
+        _lg.info("Bot created successfully.")
+        return bot
+
+    except Exception as e:
+        _lg.critical(f"Internal error: {e}.")
+        return None
+
+
+def main() -> None:
     """Main bot execution function"""
     try:
         _lg.debug("Start main func.")
@@ -134,12 +177,18 @@ async def main() -> None:
         web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
 
     except KeyboardInterrupt:
-        _lg.info("Bot stopped by user (KeyboardInterrupt)")
+        _lg.info("Bot stopped by user (KeyboardInterrupt).")
     except Exception as e:
         _lg.critical(f"Internal error: {e}.")
     finally:
+        _lg.info("Tuna tunnel stopping...")
+        process.terminate()
+        process.wait()
+        _lg.info("Tuna tunnel stopped.")
         _lg.info("Bot stopped.")
+        _lg.info("Logging stopped.")
+        logging.shutdown()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
