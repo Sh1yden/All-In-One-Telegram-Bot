@@ -1,10 +1,11 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from fluentogram import TranslatorRunner
 
 from src.callbacks.WeatherCallback import WeatherCallback
 
 
-def get_btns_weather_now() -> InlineKeyboardMarkup:
+def get_btns_weather_now(locale: TranslatorRunner) -> InlineKeyboardMarkup:
     """Кнопки снизу сообщения после команды /weatherNow."""
 
     builder = InlineKeyboardBuilder()
@@ -12,7 +13,7 @@ def get_btns_weather_now() -> InlineKeyboardMarkup:
     # 🔙 Назад
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["weather_m"]["buttons"][9],
+            text=locale.button_weather_now_back(),
             callback_data=WeatherCallback(action="weather_menu").pack(),
         ),
     )

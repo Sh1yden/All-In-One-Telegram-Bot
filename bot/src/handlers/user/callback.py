@@ -1,4 +1,4 @@
-from aiogram.types import Message, CallbackQuery, InaccessibleMessage, User
+from aiogram.types import Message, CallbackQuery, User
 from aiogram import Router
 from fluentogram import TranslatorRunner
 
@@ -6,201 +6,121 @@ from src.callbacks.WeatherCallback import WeatherCallback
 
 from src.services.WeatherService import WeatherService
 
-from src.keyboards import get_btns_weather
-from src.keyboards import get_btns_weather_now
-from src.keyboards import get_btns_start
-
+from src.keyboards import get_btns_weather, get_btns_weather_now, get_btns_start
 from src.core.Logging import get_logger
 
 
 router = Router()
 _lg = get_logger()
 
+_lg.debug("CALLBACK MODULE LOADED - ROUTER CREATED.")
 
-# обработка нажатия кнопки Погода
+
 @router.callback_query(WeatherCallback.filter())
 async def weather_callback_handler(
     callback: CallbackQuery, callback_data: WeatherCallback, locale: TranslatorRunner
-):
+) -> None:
+    """Handle weather menu callbacks"""
+
+    _lg.debug(f"CALLBACK HANDLER CALLED!")
+    _lg.debug(f"Action: {callback_data.action}")
+    _lg.debug(f"User: {callback.from_user.id}")
+    _lg.debug(f"Message exists: {callback.message is not None}")
+    _lg.debug(f"CALLBACK HANDLER TRIGGERED: {callback_data.action}")
 
     # Проверяем, что сообщение доступно для редактирования
-    if isinstance(callback.message, InaccessibleMessage):
+    if not isinstance(callback.message, Message):
         _lg.warning("Cannot edit inaccessible message.")
-        await callback.answer("Сообщение нельзя изменить.")
+        await callback.answer(locale.message_service_error_not_edit())
         return
 
     message: Message | None = callback.message
     user: User | None = callback.from_user
 
-    # 📚 Вызов всего меню
-    if callback_data.action == "weather_menu":
+    try:
+        # 📚 Вызов всего меню
+        if callback_data.action == "weather_menu":
+            await message.edit_text(
+                text=locale.message_weather_menu(),
+                reply_markup=get_btns_weather(user.id, locale),
+            )
 
-        await message.edit_text(
-            text=locale.message_weather_menu(),
-            reply_markup=get_btns_weather(user.id, locale),
-        )
+        # 🌡 Сейчас
+        elif callback_data.action == "weather_now":
+            wnm = "FIX USER"
+            await message.edit_text(text=wnm, reply_markup=get_btns_weather_now(locale))
 
-    # 🌡 Сейчас
-    if callback_data.action == "weather_now":
+        # 📊 Почасовой
+        elif callback_data.action == "weather_hours":
+            await message.edit_text(
+                text=locale.message_service_in_development(),
+                reply_markup=get_btns_weather_now(locale),
+            )
 
-        # TODO сделать переделать
-        # # Проверить наличие локации в файле
-        # if not user_data_service.user_has_location(user.id):
-        #     await message.answer(
-        #         get_message("RU_LN")["location_m"]["message_loc_not_post"]
-        #     )
-        #     return
+        # 📆 На 5 дней
+        elif callback_data.action == "weather_5d":
+            await message.edit_text(
+                text=locale.message_service_in_development(),
+                reply_markup=get_btns_weather_now(locale),
+            )
 
-        # # ✅ Проверить есть ли NULL значения
-        # if user_data_service._has_null_location(user.id):
-        #     _lg.info(
-        #         f"Found NULL values in location for user {user.id}, attempting to fix..."
-        #     )
+        # 🌅 Утро / 🌇 Вечер
+        elif callback_data.action == "weather_day_night":
+            await message.edit_text(
+                text=locale.message_service_in_development(),
+                reply_markup=get_btns_weather_now(locale),
+            )
 
-        #     # Пытаемся исправить
-        #     if user_data_service._fix_null_location(user.id):
-        #         _lg.info(f"Successfully fixed NULL location for user {user.id}")
-        #     else:
-        #         _lg.warning(f"Could not fix NULL location for user {user.id}")
+        # 🌦 Осадки
+        elif callback_data.action == "weather_rain":
+            await message.edit_text(
+                text=locale.message_service_in_development(),
+                reply_markup=get_btns_weather_now(locale),
+            )
 
-        #         await message.answer(
-        #             text=get_message("RU_LN")["location_m"]["message_null_error"]
-        #             + "\n"
-        #             + get_message("RU_LN")["device_m"]["message"],
-        #             reply_markup=get_btns_device(),
-        #         )
-        #         return
+        # 🧭 Ветер/давление
+        elif callback_data.action == "weather_wind_pressure":
+            await message.edit_text(
+                text=locale.message_service_in_development(),
+                reply_markup=get_btns_weather_now(locale),
+            )
 
-        # wn_all_ser_dict = WeatherService().get_weather_now(user.id) or {}
+        # ⚙️ Настроить
+        elif callback_data.action == "weather_settings":
+            await message.edit_text(
+                text=locale.message_service_in_development(),
+                reply_markup=get_btns_weather_now(locale),
+            )
 
-        # _lg.debug(f"ALL INFO weather now ser - {wn_all_ser_dict}")
+        # 🔔 Подписка
+        elif callback_data.action == "weather_subscription":
+            await message.edit_text(
+                text=locale.message_service_in_development(),
+                reply_markup=get_btns_weather_now(locale),
+            )
 
-        # day_or_night_emoji = (
-        #     get_message("RU_LN")["weather_now_m"]["day_or_night_emoji"][0]
-        #     if bool(wn_all_ser_dict["OpenMeteo"]["current"]["is_day"])
-        #     else get_message("RU_LN")["weather_now_m"]["day_or_night_emoji"][1]
-        # )
+        # 📍 Локация
+        elif callback_data.action == "weather_location":
+            location_display = "FIX USER"
+            await message.answer(text=location_display)
 
-        # wnm = (
-        #     # Header
-        #     get_message("RU_LN")["weather_now_m"]["message_header"]
-        #     .replace("{city}", user_data_service.get_usr_one_loc_par(user.id, "city"))
-        #     .replace("{time}", wn_all_ser_dict["OpenMeteo"]["current"]["time"][11:])
-        #     .replace("{day_or_night_emoji}", day_or_night_emoji)
-        #     + "\n"
-        #     + "\n"
-        #     # Average 2
-        #     + get_message("RU_LN")["weather_now_m"]["message_average"]
-        #     + "\n"
-        #     + get_message("RU_LN")["weather_now_m"]["message_average_filtered"]
-        #     + "\n"
-        #     # Title
-        #     + get_message("RU_LN")["weather_now_m"]["message_section_title"]
-        #     + "\n"
-        # )
+        # 🔙 Назад
+        elif callback_data.action == "weather_get_back":
+            full_name_user = user.full_name
+            main_menu_text = (
+                f"{locale.message_start_hello()}"
+                f"{full_name_user or 'Пользователь'}"
+                f"{locale.message_start_main_menu()}"
+            )
 
-        wnm = "FIX USER"
+            await message.edit_text(
+                text=main_menu_text,
+                reply_markup=get_btns_start(locale),
+            )
 
-        await message.edit_text(text=wnm, reply_markup=get_btns_weather_now())
+        # Ответ что callback обработан
+        await callback.answer()
 
-    # 📊 Почасовой
-    if callback_data.action == "weather_hours":
-        await message.edit_text(
-            text=locale.message_service_in_development(),
-            reply_markup=get_btns_weather_now(),
-        )
-        await WeatherService.get_weather_hours()
-
-    # 📆 На 5 дней
-    if callback_data.action == "weather_5d":
-        await message.edit_text(
-            text=locale.message_service_in_development(),
-            reply_markup=get_btns_weather_now(),
-        )
-        await WeatherService.get_weather_5d()
-
-    # 🌅 Утро / 🌇 Вечер
-    if callback_data.action == "weather_day_night":
-        await message.edit_text(
-            text=locale.message_service_in_development(),
-            reply_markup=get_btns_weather_now(),
-        )
-        await WeatherService.get_weather_day_night()
-
-    # 🌦 Осадки
-    if callback_data.action == "weather_rain":
-        await message.edit_text(
-            text=locale.message_service_in_development(),
-            reply_markup=get_btns_weather_now(),
-        )
-        await WeatherService.get_weather_rain()
-
-    # 🧭 Ветер/давление
-    if callback_data.action == "weather_wind_pressure":
-        await message.edit_text(
-            text=locale.message_service_in_development(),
-            reply_markup=get_btns_weather_now(),
-        )
-        await WeatherService.get_weather_wind_pressure()
-
-    # ⚙️ Настроить
-    if callback_data.action == "weather_settings":
-        await message.edit_text(
-            text=locale.message_service_in_development(),
-            reply_markup=get_btns_weather_now(),
-        )
-
-    # Функции на потом
-    # 🔔 Подписка
-    if callback_data.action == "weather_subscription":
-        await message.edit_text(
-            text=locale.message_service_in_development(),
-            reply_markup=get_btns_weather_now(),
-        )
-
-    # 📍 Локация:
-    if callback_data.action == "weather_location":
-
-        # TODO СДЕЛАТЬ ЮЗЕР СЕРВИС
-        # TODO сделать так чтобы не писало новое сообщение а изменялось меню на это
-        # TODO сделать чтобы после взаимодействия с меню локации оно заменялось обратно на погодное
-
-        # if not user_data_service.user_has_location(user.id):
-        #     # Переброс на выбор платформы для определения местоположения
-        #     await message.answer(
-        #         text=get_message("RU_LN")["device_m"]["message"],
-        #         reply_markup=get_btns_device(),
-        #     )
-        # else:
-        #     # ✅ Проверяем есть ли NULL значения
-        #     if user_data_service._has_null_location(user.id):
-        #         _lg.info(f"Found NULL values in location for user {user.id}")
-
-        #         await message.answer(
-        #             text=get_message("RU_LN")["location_m"]["message_null_error"]
-        #             + "\n"
-        #             + get_message("RU_LN")["device_m"]["message"],
-        #             reply_markup=get_btns_device(),
-        #         )
-        #     else:
-        #         # Показать сохраненную локацию
-        #         # location_display = user_data_service.format_user_location(user.id)
-
-        location_display = "FIX USER"
-
-        await message.answer(
-            text=location_display,
-        )
-
-    # 🔙 Назад
-    if callback_data.action == "weather_get_back":
-
-        full_name_user = callback.from_user.full_name
-
-        main_menu_text = f"{locale.message_start_hello()}{full_name_user or 'Пользователь'}{locale.message_start_main_menu()}"
-        _lg.debug(f"{main_menu_text}")
-
-        await message.edit_text(
-            text=main_menu_text,
-            reply_markup=get_btns_start(locale),
-        )
+    except Exception as e:
+        _lg.error(f"Error in callback handler: {e}")
+        await callback.answer(locale.message_service_error_not_edit(), show_alert=True)

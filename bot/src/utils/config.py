@@ -21,4 +21,4 @@ class SettingsSchema(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
 
-settings = SettingsSchema()
+settings = SettingsSchema()  # type: ignore

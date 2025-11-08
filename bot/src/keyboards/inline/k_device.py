@@ -1,20 +1,22 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from fluentogram import TranslatorRunner
 
 from src.callbacks.DeviceCallback import DeviceCallback
 
 
-def get_btns_device() -> InlineKeyboardMarkup:
+def get_btns_device(locale: TranslatorRunner) -> InlineKeyboardMarkup:
 
     builder = InlineKeyboardBuilder()
 
+    # 📱 Телефон    🖥️💻 Компьютер
     builder.row(
         InlineKeyboardButton(
-            text=get_message("RU_LN")["device_m"]["buttons"][0],
+            text=locale.button_device_is_phone(),
             callback_data=DeviceCallback(action="device_phone").pack(),
         ),
         InlineKeyboardButton(
-            text=get_message("RU_LN")["device_m"]["buttons"][1],
+            text=locale.button_device_is_pc(),
             callback_data=DeviceCallback(action="device_pc").pack(),
         ),
     )

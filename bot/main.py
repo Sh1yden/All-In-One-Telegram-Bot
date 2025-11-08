@@ -1,7 +1,3 @@
-import asyncio
-
-# import os
-
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -74,11 +70,11 @@ def create_translator_hub() -> TranslatorHub | None:
         return t_hub
 
     except KeyNotFoundError as e:
-        print(f"Translation key not found: {e.key}")
+        _lg.critical(f"Translation key not found: {e.key}")
     except RootTranslatorNotFoundError as e:
-        print(f"Root locale translator missing: {e.root_locale}")
+        _lg.critical(f"Root locale translator missing: {e.root_locale}")
     except FormatError as e:
-        print(f"Formatting error for key {e.key}: {e.original_error}")
+        _lg.critical(f"Formatting error for key {e.key}: {e.original_error}")
     except Exception as e:
         _lg.critical(f"Internal error: {e}.")
 
@@ -93,12 +89,17 @@ def create_dispatcher() -> Dispatcher | None:
     try:
         _lg.debug("Create Dispatcher.")
 
-        # All handlers should be attached to the Router (or Dispatcher)
-        dp = Dispatcher(storage=storage, t_hub=create_translator_hub())
+        t_hub = create_translator_hub()
+        if not t_hub:
+            _lg.critical("Failed to create TranslatorHub")
+            return None
+
+        dp = Dispatcher(storage=storage, t_hub=t_hub)
 
         dp.include_router(main_router)
-        dp.message.outer_middleware(TranslateMiddleware())
-        dp.callback_query.outer_middleware(TranslateMiddleware())
+
+        dp.message.middleware(TranslateMiddleware())
+        dp.callback_query.middleware(TranslateMiddleware())
 
         _lg.info("Dispatcher created successfully.")
         return dp
@@ -108,11 +109,28 @@ def create_dispatcher() -> Dispatcher | None:
 
 
 async def on_startup_set_webhook(bot: Bot) -> None:
-    # If you have a self-signed SSL certificate, then you will need to send a public
-    # certificate to Telegram
-    await bot.set_webhook(
-        f"{BASE_WEBHOOK_URL}{WEBHOOK_PATH}", secret_token=WEBHOOK_SECRET
-    )
+    """Set webhook on startup"""
+    try:
+        webhook_url = f"{BASE_WEBHOOK_URL}{WEBHOOK_PATH}"
+        _lg.info(f"Setting webhook to: {webhook_url}")
+
+        await bot.delete_webhook(drop_pending_updates=True)
+        _lg.info("Old webhook deleted")
+
+        result = await bot.set_webhook(
+            url=webhook_url,
+            secret_token=WEBHOOK_SECRET,
+            allowed_updates=["message", "callback_query"],
+        )
+
+        _lg.info(f"Webhook set result: {result}")
+
+        webhook_info = await bot.get_webhook_info()
+        _lg.info(f"Current webhook: {webhook_info.url}")
+        _lg.info(f"Allowed updates: {webhook_info.allowed_updates}")
+
+    except Exception as e:
+        _lg.critical(f"Failed to set webhook: {e}")
 
 
 def create_bot() -> Bot | None:
@@ -156,7 +174,7 @@ def main() -> None:
         if dp is None:
             _lg.critical("Failed to create a dispatcher. Exiting.")
             return
-        # Register startup hook to initialize webhook
+
         dp.startup.register(on_startup_set_webhook)
 
         # Вместо полинга вебхуки
@@ -168,7 +186,7 @@ def main() -> None:
             bot=bot,
             secret_token=WEBHOOK_SECRET,
         )
-        # Register webhook handler on application
+
         webhook_requests_handler.register(app, path=WEBHOOK_PATH)
         # Mount dispatcher startup and shutdown hooks to aiohttp application
         setup_application(app, dp, bot=bot)
