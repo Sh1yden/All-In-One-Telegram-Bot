@@ -120,13 +120,13 @@ def setup_logging() -> logging.Logger:
     # Обработчик для файлов в формате JSON
 
     # Создание папки если её не существует
-    Path("logs").mkdir(parents=True, exist_ok=True)
+    Path("bot/logs").mkdir(parents=True, exist_ok=True)
 
     today = datetime.date.today()
     file_number = 1
     while True:
         log_filename = f"{today.strftime('%Y-%m-%d')}-{file_number:02d}.jsonl"
-        log_filepath = os.path.join("logs", log_filename)
+        log_filepath = os.path.join("bot/logs", log_filename)
         if not os.path.exists(log_filepath):
             break
         file_number += 1

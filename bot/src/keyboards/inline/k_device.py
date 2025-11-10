@@ -2,7 +2,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from fluentogram import TranslatorRunner
 
-from src.callbacks.DeviceCallback import DeviceCallback
+from src.filters import DeviceCallback
 
 
 def get_btns_device(locale: TranslatorRunner) -> InlineKeyboardMarkup:

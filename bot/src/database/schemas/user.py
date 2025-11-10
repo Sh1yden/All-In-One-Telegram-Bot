@@ -2,12 +2,16 @@ from pydantic import BaseModel
 
 
 class UserSchema(BaseModel):
-    # GENERAL
+    # SYSTEM
     ID: int
+    IS_BOT: bool
+    IS_PREMIUM: bool | None = None
+    SUPPORTS_INLINE_QUERIES: bool
+
+    # NAME
     USERNAME: str | None = None
     FIRST_NAME: str
     LAST_NAME: str | None = None
-    IS_PREMIUM: bool | None = None
 
     # FOR LOCATION
     DEVICE_TYPE: str

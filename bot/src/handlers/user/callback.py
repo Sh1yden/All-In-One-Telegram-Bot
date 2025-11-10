@@ -2,7 +2,7 @@ from aiogram.types import Message, CallbackQuery, User
 from aiogram import Router
 from fluentogram import TranslatorRunner
 
-from src.callbacks.WeatherCallback import WeatherCallback
+from src.filters import WeatherCallback
 
 from src.services.WeatherService import WeatherService
 

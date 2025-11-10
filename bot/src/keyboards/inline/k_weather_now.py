@@ -2,7 +2,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from fluentogram import TranslatorRunner
 
-from src.callbacks.WeatherCallback import WeatherCallback
+from src.filters import WeatherCallback
 
 
 def get_btns_weather_now(locale: TranslatorRunner) -> InlineKeyboardMarkup:
