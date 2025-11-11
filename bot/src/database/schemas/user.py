@@ -6,6 +6,7 @@ class UserSchema(BaseModel):
     ID: int
     IS_BOT: bool
     IS_PREMIUM: bool | None = None
+    LANGUAGE_CODE: str | None = None
     SUPPORTS_INLINE_QUERIES: bool
 
     # NAME
@@ -18,6 +19,3 @@ class UserSchema(BaseModel):
     CITY: str
     LATITUDE: int
     LONGITUDE: int
-
-    # LANGUAGE
-    LANGUAGE_CODE: str | None = None
