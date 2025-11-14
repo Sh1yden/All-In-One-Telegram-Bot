@@ -3,8 +3,14 @@ from aiogram.filters import Command
 from aiogram.types import Message, User
 from fluentogram import TranslatorRunner
 
-from src.keyboards import get_btns_start
-from src.keyboards import get_btns_weather
+from bot.src.utils.db_utils import MethodsOfDatabase
+
+from src.keyboards import (
+    get_btns_start,
+    get_btns_weather,
+    get_btns_weather_now,
+    get_btns_device,
+)
 
 from src.core import get_logger
 
@@ -13,11 +19,16 @@ router = Router()
 _lg = get_logger()
 
 
+# обработка команды /start
 @router.message(Command("start"))
-async def command_start_handler(message: Message, locale: TranslatorRunner) -> None:
+async def command_start_handler(
+    message: Message, locale: TranslatorRunner, db: MethodsOfDatabase
+) -> None:
     """Handle /start command and display welcome message"""
     try:
         _lg.debug("Start handler activated.")
+
+        user: User | None = message.from_user
 
         if message.from_user is None:
             _lg.warning("User is None in start handler")
@@ -35,8 +46,29 @@ async def command_start_handler(message: Message, locale: TranslatorRunner) -> N
             reply_markup=get_btns_start(locale),
         )
 
+        # TODO Тут все данные о пользователе в бд
+        # TODO Обернуть всё в функцию не использовать напрямую здесь
+
+        db.create_one_user(
+            model=db.models,
+            user=user,
+            user_id=user.id,
+            is_bot=user.is_bot,
+            first_name=user.first_name,
+        )
+
     except Exception as e:
         _lg.critical(f"Internal error: {e}.")
+
+
+# обработка команды /help
+@router.message(Command("help"))
+async def command_help_handler(message: Message, locale: TranslatorRunner):
+
+    await message.answer(
+        text=locale.message_help(),
+        reply_markup=None,
+    )
 
 
 # обработка команды /weatherMenu
@@ -48,4 +80,41 @@ async def command_weather_handler(message: Message, locale: TranslatorRunner) ->
     await message.answer(
         text=locale.message_weather_menu(),
         reply_markup=get_btns_weather(user.id, locale),
+    )
+
+
+@router.message(Command("location"))
+async def request_location(message: Message, locale: TranslatorRunner) -> None:
+    """Handle /location command"""
+    user: User | None = message.from_user
+
+    if user is None:
+        _lg.warning("User is None in request_location")
+        await message.answer(locale.message_service_error_not_user_enable())
+        return
+
+    # TODO await _check_and_display_location(message, user.id)
+
+
+# обработка команды /device
+@router.message(Command("device"))
+async def command_device_handler(message: Message, locale: TranslatorRunner):
+
+    await message.answer(
+        text=locale.message_device_select(),
+        reply_markup=get_btns_device(locale),
+    )
+
+
+# обработка команды /weatherNow
+@router.message(Command("weatherNow"))
+async def command_weather_now_handler(message: Message, locale: TranslatorRunner):
+
+    user: User | None = message.from_user
+
+    # TODO сделать ответ на команду
+
+    await message.answer(
+        text="Заглушка при открытии через команду",  # ! заглушка
+        reply_markup=get_btns_weather_now(locale),
     )

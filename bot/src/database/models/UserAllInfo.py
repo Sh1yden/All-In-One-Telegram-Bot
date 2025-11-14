@@ -5,13 +5,15 @@ from bot.src.database.core import Base
 
 class UserAllInfo(Base):
     """
-    ### Table name: \n
+    ## Table name: \n
     user_all_info \n
-    ### Columns: \n
+    ## All Columns: \n
+    #### NOT NULL Columns:
+    [ id ][ user_id ][ is_bot ][ first_name ] \n
     #### System column: \n
     [ id ] \n
     #### User data: \n
-    [ user_id ][ is_bot ][ is_premium ][ language_code ][ supports_online_queries ] \n
+    [ user_id ][ is_bot ][ is_premium ][ language_code ][ supports_inline_queries ] \n
     \n
     #### User names: \n
     [ username ][ first_name ][ last_name ] \n
@@ -32,7 +34,7 @@ class UserAllInfo(Base):
     is_bot = Column(Boolean, nullable=False)
     is_premium = Column(Boolean)
     language_code = Column(String)
-    supports_online_queries = Column(Boolean, nullable=False)
+    supports_inline_queries = Column(Boolean, nullable=True)
 
     username = Column(String)
     first_name = Column(String, nullable=False)

@@ -3,7 +3,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from fluent_compiler.bundle import FluentBundle
@@ -14,10 +13,16 @@ from fluentogram.exceptions import (
     RootTranslatorNotFoundError,
 )
 
-from src.middlewares.middlewares import TranslateMiddleware
-from src.utils import settings
+from src.middlewares.middlewares import TranslateMiddleware, DataBaseMiddleware
 from src.handlers import router as main_router
-from src.utils import start_tuna
+
+from src.utils import (
+    settings,
+    start_tuna,
+    get_database_methods,
+)
+from bot.src.database.core import SessionLocal
+
 import logging
 from src.core import get_logger
 
@@ -79,7 +84,7 @@ def create_translator_hub() -> TranslatorHub | None:
         _lg.critical(f"Internal error: {e}.")
 
 
-def create_dispatcher() -> Dispatcher | None:
+def create_dispatcher(db) -> Dispatcher | None:
     """
     Create and configure Dispatcher with routers
 
@@ -99,7 +104,10 @@ def create_dispatcher() -> Dispatcher | None:
         dp.include_router(main_router)
 
         dp.message.middleware(TranslateMiddleware())
+        dp.message.outer_middleware(DataBaseMiddleware(db=db))
+
         dp.callback_query.middleware(TranslateMiddleware())
+        dp.callback_query.outer_middleware(DataBaseMiddleware(db=db))
 
         _lg.info("Dispatcher created successfully.")
         return dp
@@ -170,7 +178,7 @@ def main() -> None:
             _lg.critical("Failed to create a bot. Exiting.")
             return
 
-        dp = create_dispatcher()
+        dp = create_dispatcher(get_database_methods(SessionLocal))
         if dp is None:
             _lg.critical("Failed to create a dispatcher. Exiting.")
             return

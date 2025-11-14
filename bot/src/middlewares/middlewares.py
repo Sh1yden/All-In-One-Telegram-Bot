@@ -2,9 +2,12 @@
 
 from typing import Any, Awaitable, Callable, Dict
 
-from fluentogram import TranslatorHub
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, User, Update, Message, CallbackQuery
+from fluentogram import TranslatorHub
+
+from bot.src.utils.db_utils import MethodsOfDatabase
+
 from cachetools import TTLCache
 
 from src.core import get_logger
@@ -15,7 +18,7 @@ _lg = get_logger()
 
 
 class TranslateMiddleware(BaseMiddleware):
-    """Fluentogram translation middleware"""
+    """Fluentogram translation middleware."""
 
     async def __call__(
         self,
@@ -56,3 +59,23 @@ class TranslateMiddleware(BaseMiddleware):
         _lg.debug(f"Handler completed for {type(event).__name__}")
 
         return result
+
+
+# TODO Тут мб место под User middleware
+
+
+class DataBaseMiddleware(BaseMiddleware):  # pylint: disable=too-few-public-methods
+    """Data base middleware."""
+
+    def __init__(self, db: MethodsOfDatabase):
+        super().__init__()
+        self.db = db
+
+    async def __call__(
+        self,
+        handler: Callable[[Update, Dict[str, Any]], Awaitable[Any]],
+        event: Update,
+        data: Dict[str, Any],
+    ) -> Any:
+        data["db"] = self.db
+        return await handler(event, data)
