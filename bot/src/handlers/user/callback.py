@@ -4,7 +4,7 @@ from fluentogram import TranslatorRunner
 
 from src.filters import WeatherCallback
 
-from src.services.WeatherService import WeatherService
+# from src.services.WeatherService import WeatherService
 
 from src.keyboards import get_btns_weather, get_btns_weather_now, get_btns_start
 from src.core.Logging import get_logger

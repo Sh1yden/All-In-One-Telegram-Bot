@@ -3,7 +3,7 @@
 from typing import Any, Awaitable, Callable, Dict
 
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject, User, Update, Message, CallbackQuery
+from aiogram.types import TelegramObject, User, Update
 from fluentogram import TranslatorHub
 
 from bot.src.utils.db_utils import MethodsOfDatabase
@@ -71,7 +71,7 @@ class DataBaseMiddleware(BaseMiddleware):  # pylint: disable=too-few-public-meth
         super().__init__()
         self.db = db
 
-    async def __call__(
+    async def __call__(  # type: ignore
         self,
         handler: Callable[[Update, Dict[str, Any]], Awaitable[Any]],
         event: Update,

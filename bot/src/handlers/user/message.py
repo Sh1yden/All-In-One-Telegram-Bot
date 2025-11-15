@@ -4,6 +4,7 @@ from aiogram.types import Message, User
 from fluentogram import TranslatorRunner
 
 from bot.src.utils.db_utils import MethodsOfDatabase
+from bot.src.database.models import UserAllInfo
 
 from src.keyboards import (
     get_btns_start,
@@ -46,16 +47,16 @@ async def command_start_handler(
             reply_markup=get_btns_start(locale),
         )
 
-        # TODO Тут все данные о пользователе в бд
-        # TODO Обернуть всё в функцию не использовать напрямую здесь
-
-        db.create_one_user(
-            model=db.models,
-            user=user,
-            user_id=user.id,
-            is_bot=user.is_bot,
-            first_name=user.first_name,
-        )
+        # Создание пользователя в БД
+        if not db.user_exists(UserAllInfo, user.id):
+            success, msg = db.create_one_user(
+                model=UserAllInfo,
+                user=user,
+            )
+            if success:
+                _lg.debug(f"New user created: {user.id}")
+            else:
+                _lg.error(f"Failed to create user: {msg}")
 
     except Exception as e:
         _lg.critical(f"Internal error: {e}.")
@@ -83,6 +84,21 @@ async def command_weather_handler(message: Message, locale: TranslatorRunner) ->
     )
 
 
+# обработка команды /weatherNow
+@router.message(Command("weatherNow"))
+async def command_weather_now_handler(message: Message, locale: TranslatorRunner):
+
+    user: User | None = message.from_user
+
+    # TODO сделать ответ на команду
+
+    await message.answer(
+        text="Заглушка при открытии через команду",  # ! заглушка
+        reply_markup=get_btns_weather_now(locale),
+    )
+
+
+# обработка команды /location
 @router.message(Command("location"))
 async def request_location(message: Message, locale: TranslatorRunner) -> None:
     """Handle /location command"""
@@ -103,18 +119,4 @@ async def command_device_handler(message: Message, locale: TranslatorRunner):
     await message.answer(
         text=locale.message_device_select(),
         reply_markup=get_btns_device(locale),
-    )
-
-
-# обработка команды /weatherNow
-@router.message(Command("weatherNow"))
-async def command_weather_now_handler(message: Message, locale: TranslatorRunner):
-
-    user: User | None = message.from_user
-
-    # TODO сделать ответ на команду
-
-    await message.answer(
-        text="Заглушка при открытии через команду",  # ! заглушка
-        reply_markup=get_btns_weather_now(locale),
     )

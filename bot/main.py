@@ -1,3 +1,5 @@
+import asyncio
+
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -47,7 +49,7 @@ WEBHOOK_PATH = "/webhook"
 WEBHOOK_SECRET = "my-secret"
 
 # Redirect for global net:
-BASE_WEBHOOK_URL, process = start_tuna(WEB_SERVER_PORT)
+BASE_WEBHOOK_URL, tuna_process = start_tuna(WEB_SERVER_PORT)
 
 
 def create_translator_hub() -> TranslatorHub | None:
@@ -120,10 +122,10 @@ async def on_startup_set_webhook(bot: Bot) -> None:
     """Set webhook on startup"""
     try:
         webhook_url = f"{BASE_WEBHOOK_URL}{WEBHOOK_PATH}"
-        _lg.info(f"Setting webhook to: {webhook_url}")
+        _lg.debug(f"Setting webhook to: {webhook_url}")
 
         await bot.delete_webhook(drop_pending_updates=True)
-        _lg.info("Old webhook deleted")
+        _lg.debug("Old webhook deleted")
 
         result = await bot.set_webhook(
             url=webhook_url,
@@ -131,11 +133,11 @@ async def on_startup_set_webhook(bot: Bot) -> None:
             allowed_updates=["message", "callback_query"],
         )
 
-        _lg.info(f"Webhook set result: {result}")
+        _lg.debug(f"Webhook set result: {result}")
 
         webhook_info = await bot.get_webhook_info()
         _lg.info(f"Current webhook: {webhook_info.url}")
-        _lg.info(f"Allowed updates: {webhook_info.allowed_updates}")
+        _lg.debug(f"Allowed updates: {webhook_info.allowed_updates}")
 
     except Exception as e:
         _lg.critical(f"Failed to set webhook: {e}")
@@ -168,8 +170,8 @@ def create_bot() -> Bot | None:
         return None
 
 
-def main() -> None:
-    """Main bot execution function"""
+async def run_bot() -> None:
+    """Async main app function."""
     try:
         _lg.debug("Start main func.")
 
@@ -178,39 +180,114 @@ def main() -> None:
             _lg.critical("Failed to create a bot. Exiting.")
             return
 
-        dp = create_dispatcher(get_database_methods(SessionLocal))
+        db_methods = get_database_methods(SessionLocal)
+        _lg.info("Database initialized.")
+
+        dp = create_dispatcher(db_methods)
         if dp is None:
             _lg.critical("Failed to create a dispatcher. Exiting.")
             return
 
-        dp.startup.register(on_startup_set_webhook)
+        # Set webhook
+        await on_startup_set_webhook(bot)
 
-        # Вместо полинга вебхуки
-        # Создание aiohttp Application
+        # Setup web application
         app = web.Application()
 
-        webhook_requests_handler = SimpleRequestHandler(
+        webhook_handler = SimpleRequestHandler(
             dispatcher=dp,
             bot=bot,
             secret_token=WEBHOOK_SECRET,
         )
-
-        webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-        # Mount dispatcher startup and shutdown hooks to aiohttp application
+        webhook_handler.register(app, path=WEBHOOK_PATH)
         setup_application(app, dp, bot=bot)
 
-        # And finally start webserver
-        web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+        # Start web server
+        runner = web.AppRunner(app)
+        if runner is None:
+            _lg.critical("Failed to create a runner. Exiting.")
+            return
+        await runner.setup()
 
+        site = web.TCPSite(runner, WEB_SERVER_HOST, WEB_SERVER_PORT)
+        await site.start()
+
+        _lg.info(f"Web server started on {WEB_SERVER_HOST}:{WEB_SERVER_PORT}")
+        _lg.info("Bot is running. Press Ctrl+C to stop.")
+
+        await asyncio.Event().wait()
+
+    except asyncio.CancelledError:
+        _lg.info("Bot stopped by signal.")
     except KeyboardInterrupt:
-        _lg.info("Bot stopped by user (KeyboardInterrupt).")
+        _lg.info("Bot stopped by user.")
     except Exception as e:
-        _lg.critical(f"Internal error: {e}.")
+        _lg.critical(f"Critical error: {e}.", exc_info=True)
     finally:
-        _lg.info("Tuna tunnel stopping...")
-        process.terminate()
-        process.wait()
-        _lg.info("Tuna tunnel stopped.")
+        _lg.info("Starting cleanup:")
+
+        # Cleanup
+        # Stop web server
+        if runner:  # type: ignore
+            try:
+                await runner.cleanup()
+                _lg.info("Web server stopped.")
+            except Exception as e:
+                _lg.error(f"Error stopping web server: {e}.")
+
+        # Delete webhook and close bot
+        if bot:  # type: ignore
+            try:
+                await bot.delete_webhook(drop_pending_updates=False)
+                _lg.info("Webhook deleted.")
+            except Exception as e:
+                _lg.error(f"Error deleting webhook: {e}.")
+
+            try:
+                await bot.session.close()
+                _lg.info("Bot session closed.")
+            except Exception as e:
+                _lg.error(f"Error closing bot: {e}.")
+
+        # Close storage
+        try:
+            await storage.close()
+            _lg.info("Storage closed.")
+        except Exception as e:
+            _lg.error(f"Error closing storage: {e}.")
+
+        # Close database
+        if db_methods:  # type: ignore
+            try:
+                db_methods.engine.dispose()
+                _lg.info("Database closed.")
+            except Exception as e:
+                _lg.error(f"Error closing database: {e}.")
+
+        # Stop Tuna tunnel
+        if tuna_process:
+            try:
+                _lg.info("Stopping Tuna tunnel...")
+                tuna_process.terminate()
+                tuna_process.wait(timeout=3)
+                _lg.info("Tuna tunnel stopped.")
+            except Exception:
+                try:
+                    tuna_process.kill()
+                    _lg.warning("Tuna tunnel killed.")
+                except Exception as e:
+                    _lg.error(f"Error killing Tuna: {e}.")
+
+        _lg.info("Cleanup completed!")
+
+
+def main() -> None:
+    """Main point."""
+    try:
+        asyncio.run(run_bot())
+    except KeyboardInterrupt:
+        _lg.info("Received Ctrl+C.")
+    finally:
         _lg.info("Bot stopped.")
         _lg.info("Logging stopped.")
         logging.shutdown()

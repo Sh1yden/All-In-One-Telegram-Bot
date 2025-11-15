@@ -2,6 +2,9 @@
 __pycache__/
 *.py[codz]
 *$py.class
+*.pyc
+*.pyo
+*.pyd
 
 # C extensions
 *.so
@@ -147,7 +150,7 @@ env.bak/
 venv.bak/
 
 # personal data
-src/config/settings/users_data.json
+src/database/database files/sqlite/
 
 # Spyder project settings
 .spyderproject
@@ -192,6 +195,9 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file. However, if you prefer,
 #  you could uncomment the following to ignore the entire vscode folder
 .vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
 
 # Ruff stuff:
 .ruff_cache/

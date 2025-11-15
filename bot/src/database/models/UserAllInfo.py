@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, Float
 
-from bot.src.database.core import Base
+from src.database.core.database import Base
 
 
 class UserAllInfo(Base):
@@ -22,6 +22,7 @@ class UserAllInfo(Base):
     """
 
     __tablename__ = "user_all_info"
+    __table_args__ = {"extend_existing": True}
 
     id = Column(
         Integer,
