@@ -2,6 +2,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from fluentogram import TranslatorRunner
 
+from src.filters import WeatherCallback
 from src.filters import DeviceCallback
 
 
@@ -18,6 +19,14 @@ def get_btns_device(locale: TranslatorRunner) -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text=locale.button_device_is_pc(),
             callback_data=DeviceCallback(action="device_pc").pack(),
+        ),
+    )
+
+    # 🔙 Назад
+    builder.row(
+        InlineKeyboardButton(
+            text=locale.button_weather_now_back(),
+            callback_data=WeatherCallback(action="weather_menu").pack(),
         ),
     )
 

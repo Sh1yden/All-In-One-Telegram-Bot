@@ -8,15 +8,16 @@ if __name__ == "__main__":
     sys.path.insert(0, str(bot_dir))
 
 from typing import Type, Any, TypeVar
+import pickle
+
+import redis
+
 from aiogram.types import User
 
 from sqlalchemy import Engine, inspect, exists, select, func
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
 
 from src.core import get_logger
-
-
-_lg = get_logger()
 
 # TypeVar для generic типизации
 T = TypeVar("T", bound=DeclarativeBase)
@@ -49,6 +50,7 @@ class MethodsOfDatabase:
         self.session_factory = session_factory
         self.base = base
         self.engine = engine
+        self.redis_connection = self.connect_to_redis()
 
         self.create_tables_and_database()
 
@@ -64,7 +66,6 @@ class MethodsOfDatabase:
     def create_tables_and_database(self) -> bool:
         """Create all database tables if they don't exist"""
         try:
-            # ✅ Импортируем модель здесь
             from src.database.models import UserAllInfo  # noqa: F401
 
             inspector = inspect(self.engine)
@@ -87,6 +88,114 @@ class MethodsOfDatabase:
         except Exception as e:
             self._lg.critical(f"Failed to create tables: {e}.", exc_info=True)
             return False
+
+    def connect_to_redis(self) -> redis.Redis | None:
+        try:
+
+            settings_redis_db = {
+                "host": "localhost",
+                "port": 6379,
+                "db": 0,
+            }
+
+            return redis.Redis(
+                host=settings_redis_db["host"],
+                port=settings_redis_db["port"],
+                db=settings_redis_db["db"],
+            )
+
+        except Exception as e:
+            self._lg.error(f"Internal error: {e}")
+
+    def deserialize_redis_data(self, user_id: int) -> dict | None:
+        """
+        Получает и десериализует данные из Redis
+
+        Returns:
+            dict, или None если данных нет
+        """
+        try:
+            data = self.get_data_from_redis(key=user_id)
+
+            if data is None:
+                return None
+
+            if isinstance(data, bytes):
+                return pickle.loads(data)
+
+            if isinstance(data, dict):
+                return data
+
+            return None
+
+        except Exception as e:
+            self._lg.error(f"Failed to deserialize Redis data for user {user_id}: {e}")
+            return None
+
+    def cache_data_in_redis(self, key: Any, data: Any) -> None:
+        try:
+            self.redis_connection.set(key, pickle.dumps(data))
+
+            self._lg.debug(f"Successfully cache data in redis - {data}.")
+
+        except Exception as e:
+            self._lg.error("NOT Successfully cache data in redis.")
+            self._lg.error(f"Internal error: {e}")
+
+    def update_redis_cache(self, user_id: int, updated_fields: dict[str, dict]) -> None:
+        """
+        Обновляет только изменённые поля в Redis, не затрагивая остальные
+
+        Args:
+            user_id: ID пользователя
+            updated_fields: Словарь с изменёнными полями {field: {"old": ..., "new": ...}}
+        """
+        try:
+            # Получаем и десериализуем данные из Redis
+            cached_data = self.deserialize_redis_data(user_id)
+
+            if cached_data is None:
+                cached_data = {}
+
+            # Обновляем только новые поля
+            for field, changes in updated_fields.items():
+                cached_data[field] = changes["new"]
+
+            # Сохраняем обратно
+            self.cache_data_in_redis(key=user_id, data=cached_data)
+
+            self._lg.debug(
+                f"Redis cache updated for user {user_id}: {list(updated_fields.keys())}"
+            )
+
+        except Exception as e:
+            self._lg.error(
+                f"Failed to update Redis cache for user {user_id}: {e}", exc_info=True
+            )
+
+    def delete_data_from_redis(self, key: Any) -> None:
+        try:
+            self.redis_connection.delete(key)
+
+            self._lg.debug(f"Successfully delete data in redis.")
+
+        except Exception as e:
+            self._lg.error("NOT Successfully delete data in redis.")
+            self._lg.error(f"Internal error: {e}")
+
+    def get_data_from_redis(self, key: Any) -> Any | None:
+        try:
+            cached_data = self.redis_connection.get(key)
+
+            if cached_data:
+                self._lg.debug("Successfully get redis cached data.")
+                return cached_data
+            else:
+                self._lg.error("NOT Successfully get redis cached data.")
+                return None
+
+        except Exception as e:
+            self._lg.error(f"Internal error: {e}")
 
     def create_one_user(
         self,
@@ -118,7 +227,7 @@ class MethodsOfDatabase:
             user_id = user.id if user else kwargs.get("user_id")
 
             if user_id:
-                existing = session.query(model).filter(model.user_id == user_id).first()
+                existing = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
 
                 if existing:
                     self._lg.debug(f"User {user_id} already exists.")
@@ -149,38 +258,16 @@ class MethodsOfDatabase:
             session.commit()
             session.refresh(new_user)
 
-            self._lg.debug(f"User created: {new_user.user_id}.")
-            return True, f"User {new_user.user_id} created successfully."
+            # Redis cache
+            self.cache_data_in_redis(key=user_id, data=data)  # type: ignore
+
+            self._lg.debug(f"User created: {new_user.user_id}.")  # type: ignore
+            return True, f"User {new_user.user_id} created successfully."  # type: ignore
 
         except Exception as e:
             session.rollback()
             self._lg.error(f"Failed to create user: {e}.", exc_info=True)
             return False, f"Error: {str(e)}."
-        finally:
-            session.close()
-
-    def user_exists(self, model: Type[T], user_id: int) -> bool:
-        """
-        Check if user exists in database
-
-        Args:
-            model: Model class
-            user_id: Telegram user ID
-
-        Returns:
-            bool: True if user exists, False otherwise
-        """
-        session = self._get_session()
-        try:
-            # Используем EXISTS для оптимизации
-            stmt = select(exists().where(model.user_id == user_id))
-            result = session.execute(stmt).scalar()
-
-            return bool(result)
-
-        except Exception as e:
-            self._lg.error(f"Error checking user existence: {e}.")
-            return False
         finally:
             session.close()
 
@@ -201,7 +288,7 @@ class MethodsOfDatabase:
         """
         session = self._get_session()
         try:
-            user = session.query(model).filter(model.user_id == user_id).first()
+            user = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
 
             if user is None:
                 self._lg.warning(f"User {user_id} not found for deletion.")
@@ -212,6 +299,9 @@ class MethodsOfDatabase:
 
             session.delete(user)
             session.commit()
+
+            # Redis cache
+            self.delete_data_from_redis(key=user_id)
 
             self._lg.debug(f"User deleted: {user_id} ({username}).")
             return True, f"User {user_id} deleted successfully."
@@ -250,7 +340,7 @@ class MethodsOfDatabase:
         """
         session = self._get_session()
         try:
-            user = session.query(model).filter(model.user_id == user_id).first()
+            user = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
 
             if user is None:
                 self._lg.warning(f"User {user_id} not found for update.")
@@ -282,6 +372,9 @@ class MethodsOfDatabase:
             session.commit()
             session.refresh(user)
 
+            # Redis cache
+            self.update_redis_cache(user_id=user_id, updated_fields=updated_fields)
+
             self._lg.debug(f"User {user_id} updated: {list(updated_fields.keys())}.")
             return True, f"Updated {len(updated_fields)} fields.", updated_fields
 
@@ -292,11 +385,103 @@ class MethodsOfDatabase:
         finally:
             session.close()
 
+    def user_exists(self, model: Type[T], user_id: int) -> bool:
+        """
+        Check if user exists in database
+
+        Args:
+            model: Model class
+            user_id: Telegram user ID
+
+        Returns:
+            bool: True if user exists, False otherwise
+        """
+        session = self._get_session()
+        try:
+            cached_data_bytes = self.get_data_from_redis(key=user_id)
+
+            if cached_data_bytes:
+                return bool(cached_data_bytes)
+            else:
+                # Используем EXISTS для оптимизации
+                stmt = select(exists().where(model.user_id == user_id))  # type: ignore
+                result = session.execute(stmt).scalar()
+
+                return bool(result)
+
+        except Exception as e:
+            self._lg.error(f"Error checking user existence: {e}.")
+            return False
+        finally:
+            session.close()
+
+    def user_location_exists(self, model: Type[T], user_id: int) -> bool:
+        """
+        Check if user location exists in database
+
+        Args:
+            model: Model class
+            user_id: Telegram user ID
+
+        Returns:
+            bool: True if user location exists, False otherwise
+        """
+        session = self._get_session()
+        try:
+            cached_data = self.deserialize_redis_data(user_id=user_id)
+
+            if cached_data:
+                self._lg.debug(f"Cached data (deserialized) - {cached_data}")
+
+                if cached_data and isinstance(cached_data, dict):
+                    city = cached_data.get("city")
+                    lat = cached_data.get("latitude")
+                    lon = cached_data.get("longitude")
+
+                    if city or lat or lon:
+                        self._lg.debug(
+                            f"User {user_id} location found in cache: city={city}, lat={lat}, lon={lon}"
+                        )
+                        return True
+
+                    self._lg.debug(f"User {user_id} location not found in cache")
+                    return False
+                else:
+                    self._lg.debug(f"Cached data not isinstance!!!")
+                    return False
+
+            else:
+                self._lg.debug(f"No cache for user {user_id}, checking database")
+                user = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
+
+                if not user:
+                    self._lg.warning(f"User {user_id} not found in database")
+                    return False
+
+                city = getattr(user, "city", None)
+                lat = getattr(user, "latitude", None)
+                lon = getattr(user, "longitude", None)
+
+                if city or lat or lon:
+                    self._lg.debug(
+                        f"User {user_id} location found in DB: city={city}, lat={lat}, lon={lon}"
+                    )
+                    return True
+
+                self._lg.debug(f"User {user_id} location not found in DB")
+                return False
+
+        except Exception as e:
+            self._lg.error(f"Error checking user existence: {e}.")
+            return False
+        finally:
+            session.close()
+
     def find_by_one_user_id(
         self,
         model: Type[T],
         user_id: int,
-        as_dict: bool = False,
+        as_dict: bool = True,
     ) -> T | dict[str, Any] | None:
         """
         Find one user by ID
@@ -311,25 +496,31 @@ class MethodsOfDatabase:
         """
         session = self._get_session()
         try:
-            user = session.query(model).filter(model.user_id == user_id).first()
+            cached_data = self.deserialize_redis_data(user_id=user_id)
 
-            if user is None:
-                self._lg.debug(f"User {user_id} not found.")
-                return None
+            if cached_data:
+                return cached_data
 
-            if as_dict:
-                # Преобразуем в словарь
-                result = {
-                    column.name: getattr(user, column.name)
-                    for column in model.__table__.columns
-                }
-                self._lg.debug(f"User {user_id} found and returned as dict.")
-                return result
             else:
-                # Отвязываем от сессии
-                session.expunge(user)
-                self._lg.debug(f"User {user_id} found and returned as object.")
-                return user
+                user = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
+
+                if user is None:
+                    self._lg.debug(f"User {user_id} not found.")
+                    return None
+
+                if as_dict:
+                    # Преобразуем в словарь
+                    result = {
+                        column.name: getattr(user, column.name)
+                        for column in model.__table__.columns
+                    }
+                    self._lg.debug(f"User {user_id} found and returned as dict.")
+                    return result
+                else:
+                    # Отвязываем от сессии
+                    session.expunge(user)
+                    self._lg.debug(f"User {user_id} found and returned as object.")
+                    return user
 
         except Exception as e:
             self._lg.error(f"Error finding user {user_id}: {e}.")
@@ -337,7 +528,7 @@ class MethodsOfDatabase:
         finally:
             session.close()
 
-    def find_users(
+    def find_users(  # TODO
         self,
         model: Type[T],
         filters: dict[str, Any] | None = None,
@@ -404,7 +595,7 @@ class MethodsOfDatabase:
         finally:
             session.close()
 
-    def count_users(
+    def count_users(  # TODO
         self,
         model: Type[T],
         filters: dict[str, Any] | None = None,
@@ -427,7 +618,7 @@ class MethodsOfDatabase:
         """
         session = self._get_session()
         try:
-            query = session.query(func.count(model.id))
+            query = session.query(func.count(model.id))  # type: ignore
 
             if filters:
                 for key, value in filters.items():
@@ -446,7 +637,7 @@ class MethodsOfDatabase:
         finally:
             session.close()
 
-    def create_many_users(
+    def create_many_users(  # TODO
         self,
         model: Type[T],
         users_data: list[dict[str, Any]],
@@ -500,7 +691,7 @@ class MethodsOfDatabase:
         finally:
             session.close()
 
-    def get_all_user_ids(
+    def get_all_user_ids(  # TODO
         self,
         model: Type[T],
     ) -> list[int]:
@@ -515,7 +706,7 @@ class MethodsOfDatabase:
         """
         session = self._get_session()
         try:
-            user_ids = session.query(model.user_id).all()
+            user_ids = session.query(model.user_id).all()  # type: ignore
             result = [user_id[0] for user_id in user_ids]
 
             self._lg.debug(f"Retrieved {len(result)} user IDs.")
@@ -552,26 +743,33 @@ if __name__ == "__main__":
     from src.database.core import SessionLocal
     from src.database.models import UserAllInfo
 
+    _lg = get_logger()
+
     _lg.debug("Testing MethodsOfDatabase:")
 
     # Создаём экземпляр
     dbm = get_database_methods(SessionLocal)
 
-    # Тест 1: Создание пользователя
-    _lg.debug("Test 1: Creating user:")
-    success, msg = dbm.create_one_user(
-        model=UserAllInfo,
-        user_id=5080080714,
-        is_bot=False,
-        first_name="Shayden",
-        supports_inline_queries=False,
-    )
-    _lg.debug(f"Result: {success} - {msg}.")
+    # # Тест 1: Создание пользователя
+    # _lg.debug("Test 1: Creating user:")
+    # success, msg = dbm.create_one_user(
+    #     model=UserAllInfo,
+    #     user_id=5080080714,
+    #     is_bot=False,
+    #     first_name="Shayden",
+    #     supports_inline_queries=False,
+    # )
+    # _lg.debug(f"Result: {success} - {msg}.")
 
     # Тест 2: Проверка существования
     _lg.debug("Test 2: Check if user exists:")
     exists = dbm.user_exists(UserAllInfo, 5080080714)
     _lg.debug(f"User exists: {exists}.")
+
+    # Тест 2.1: Проверка существования локации
+    _lg.debug("Test 2.1: Check if user location exists:")
+    loc_exists = dbm.user_location_exists(UserAllInfo, 5080080714)
+    _lg.debug(f"User location exists: {loc_exists}.")
 
     # Тест 3: Поиск пользователя
     _lg.debug("Test 3: Find user:")
@@ -579,12 +777,12 @@ if __name__ == "__main__":
     _lg.debug(f"Found user: {user}.")
 
     # Тест 4: Обновление
-    _lg.debug("Test 4: Update user:")
-    success, msg, changes = dbm.update_one_user_by_id(
-        UserAllInfo, 5080080714, is_premium=True, city="Moscow"
-    )
-    _lg.debug(f"Result: {success} - {msg}.")
-    _lg.debug(f"Changes: {changes}.")
+    # _lg.debug("Test 4: Update user:")
+    # success, msg, changes = dbm.update_one_user_by_id(
+    #     UserAllInfo, 5080080714, is_premium=True, city="Moscow"
+    # )
+    # _lg.debug(f"Result: {success} - {msg}.")
+    # _lg.debug(f"Changes: {changes}.")
 
     # Тест 5: Подсчёт
     _lg.debug("Test 5: Count users:")
@@ -592,9 +790,9 @@ if __name__ == "__main__":
     _lg.debug(f"Total users: {count}.")
 
     # Тест 6: Удаление
-    _lg.debug("Test 6: Delete user:")
-    success, msg = dbm.delete_one_user_by_id(UserAllInfo, 5080080714)
-    _lg.debug(f"Result: {success} - {msg}.")
+    # _lg.debug("Test 6: Delete user:")
+    # success, msg = dbm.delete_one_user_by_id(UserAllInfo, 5080080714)
+    # _lg.debug(f"Result: {success} - {msg}.")
 
     # Закрываем соединение
     dbm.close()

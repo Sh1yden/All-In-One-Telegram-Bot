@@ -1,4 +1,16 @@
+import sys
+from pathlib import Path
+
+# Для прямого запуска файла
+if __name__ == "__main__":
+    # Добавляем bot/ в sys.path
+    bot_dir = Path(__file__).parent.parent.parent
+    sys.path.insert(0, str(bot_dir))
+
 from typing import Any
+
+from bot.src.utils.db_utils import MethodsOfDatabase
+from bot.src.database.models import UserAllInfo
 
 from src.services.OpenMeteo import OpenMeteo
 from src.core.Logging import get_logger
@@ -16,7 +28,9 @@ class WeatherService:
 
         self._open_meteo = OpenMeteo()
 
-    def get_weather_now(self, user_id: int) -> dict[str, Any] | None:
+    def get_weather_now(
+        self, user_id: int, db: MethodsOfDatabase
+    ) -> dict[str, Any] | None:
         """
         Get current weather for user
 
@@ -27,8 +41,7 @@ class WeatherService:
             dict | None: Weather data or None if error
         """
         try:
-            # TODO переделать
-            usr_loc = ""
+            usr_loc = db.find_by_one_user_id(model=UserAllInfo, user_id=user_id)
 
             if not usr_loc:
                 self._lg.warning(f"No location found for user {user_id}")
@@ -96,6 +109,14 @@ class WeatherService:
 
 
 if __name__ == "__main__":
+    from src.database.core import SessionLocal
+    from src.database.models import UserAllInfo
+    from src.utils import get_database_methods
+
+    _lg = get_logger()
     ws = WeatherService()
-    result = ws.get_weather_now(5080080714)
-    print(f"Weather data: {result}")
+
+    db = get_database_methods(SessionLocal)
+
+    result = ws.get_weather_now(user_id=5080080714, db=db)
+    _lg.debug(f"Weather data: {result}")

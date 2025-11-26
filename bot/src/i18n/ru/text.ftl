@@ -39,17 +39,21 @@ message_weather_menu =
 # ? Weather NOW Msgs
 emoji_weather_now_day = ☀️
 emoji_weather_now_night = 🌙
-message_weather_now_header = 🌡 Погода в городе {city} на {time}{day_or_night_emoji}:
-message_weather_now_average = ☯️ Средняя: {avg_temp}{temp_unit}
-message_weather_now_average_filtered = ☯️❗ Средняя без ошибочных данных: {avg_filtered}{temp_unit}
-message_weather_now_section_title = ⌛ Сейчас:
-message_weather_now_source_template = {num}. {source_name}: {temp}{temp_unit}
+message_weather_now_header =
+    🌡 Погода в городе { $city } на { $time }{ $day_or_night_emoji }:
+
+    ☯️ Средняя: { $avg_temp }{ $temp_unit }
+    ☯️❗ Средняя без ошибочных данных: { $avg_filtered}{ $temp_unit }
+
+    ⌛ Сейчас:
+
+message_weather_now_source_template = { $num }. { $source_name }: { $temp }{ $temp_unit }
 message_weather_now_summary_template =
     📖 Краткая сводка:
-        🏙️ Условия: {condition}
-        👤 Ощущается как: {feels_like}{temp_unit}
-        💧 Влажность: {humidity}{humidity_unit}
-        🌬️ Ветер: {wind}{wind_unit}
+        🏙️ Условия: { $condition }
+        👤 Ощущается как: { $feels_like }{ $temp_unit }
+        💧 Влажность: { $humidity }{ $humidity_unit }
+        🌬️ Ветер: { $wind }{ $wind_unit }
 
 
 # ? Device Msgs
@@ -59,17 +63,15 @@ message_device_select = ❓ Выберете свой девайс для опр
 # ? LOCATION Msgs
 
 # ? Location COMMON Msgs
+message_location_good_send =
+    📍 Получено местоположение.
+    Ваши координаты и город:
+    🏙️ Город: { $city }
+    ↔️ Широта: { $latitude }
+    ↕️ Долгота: { $longitude }
+
 # ? Location CURRENT Msgs
 message_location_current = 📍 Текущая локация:
-
-message_location_good_send_w =
-    📍 Получено местоположение(Координаты):
-        Широта:
-message_location_good_send_l =
-    Долгота:
-message_location_good_send_city =
-    📍 Получено местоположение(Город):
-        Город:
 
 # ? Location PHONE Msgs
 message_location_send_on_phone = ❗ Пожалуйста, отправьте ваше местоположение(через телеграм):

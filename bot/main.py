@@ -259,7 +259,7 @@ async def run_bot() -> None:
         # Close database
         if db_methods:  # type: ignore
             try:
-                db_methods.engine.dispose()
+                db_methods.close()
                 _lg.info("Database closed.")
             except Exception as e:
                 _lg.error(f"Error closing database: {e}.")
