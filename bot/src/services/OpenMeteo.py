@@ -1,7 +1,7 @@
 import requests
 from typing import Any
 
-from src.core.Logging import get_logger
+from src.core import get_logger
 
 
 class OpenMeteo:

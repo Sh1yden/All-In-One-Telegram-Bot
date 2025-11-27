@@ -1,5 +1,5 @@
 import os
-from src.core.Logging import get_logger
+from src.core import get_logger
 
 
 # Тут будет вместо использования API, парсинг

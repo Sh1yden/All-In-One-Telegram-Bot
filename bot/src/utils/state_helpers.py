@@ -1,7 +1,7 @@
 from aiogram.fsm.context import FSMContext
 from typing import Any
 
-from src.core.Logging import get_logger
+from src.core import get_logger
 
 _lg = get_logger()
 

@@ -9,8 +9,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
 from fluentogram import TranslatorRunner
 
-from bot.src.utils.db_utils import MethodsOfDatabase
-from bot.src.database.models import UserAllInfo
+from src.utils.db_utils import MethodsOfDatabase
+from src.database.models import UserAllInfo
 
 from src.services import get_cord_from_city
 from src.services import get_city_from_cord
@@ -32,7 +32,7 @@ from src.keyboards import (
     get_btns_device,
     get_btns_location,
 )
-from src.core.Logging import get_logger
+from src.core import get_logger
 
 
 router = Router()
@@ -78,12 +78,21 @@ async def weather_callback_handler(
         elif callback_data.action == "weather_now":
 
             if db.user_location_exists(UserAllInfo, user.id):
-                location = db.find_by_one_user_id(model=UserAllInfo, user_id=user.id)
+                location = db.find_by_one_user_id(
+                    model=UserAllInfo,
+                    user_id=user.id,
+                )
 
                 city = location.get("city")
 
-                wn_all_ser_dict = (
-                    WeatherService().get_weather_now(user_id=user.id, db=db) or {}
+                usr_loc_dict = db.find_by_one_user_id(
+                    model=UserAllInfo,
+                    user_id=user.id,
+                )
+
+                wn_all_ser_dict = WeatherService().get_weather_now(
+                    user_id=user.id,
+                    usr_loc=usr_loc_dict,
                 )
 
                 time = wn_all_ser_dict.get("OpenMeteo").get("current").get("time")[11:]

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from .database_config import get_engine
-from bot.src.core import get_logger
+from src.core import get_logger
 
 _lg = get_logger()
 

@@ -2,8 +2,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from fluentogram import TranslatorRunner
 
-from bot.src.utils.db_utils import MethodsOfDatabase
-from bot.src.database.models import UserAllInfo
+from src.utils.db_utils import MethodsOfDatabase
+from src.database.models import UserAllInfo
 
 from src.filters import WeatherCallback
 

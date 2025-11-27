@@ -23,7 +23,7 @@ from src.utils import (
     start_tuna,
     get_database_methods,
 )
-from bot.src.database.core import SessionLocal
+from src.database.core import SessionLocal
 
 import logging
 from src.core import get_logger
@@ -46,7 +46,7 @@ WEB_SERVER_PORT = 8080
 # Path to webhook route, on which Telegram will send requests
 WEBHOOK_PATH = "/webhook"
 # Secret key to validate requests from Telegram (optional)
-WEBHOOK_SECRET = "my-secret"
+WEBHOOK_SECRET = settings.TELEGRAM_WEBHOOK_SECRET
 
 # Redirect for global net:
 BASE_WEBHOOK_URL, tuna_process = start_tuna(WEB_SERVER_PORT)

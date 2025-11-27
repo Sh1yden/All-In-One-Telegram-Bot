@@ -9,11 +9,11 @@ if __name__ == "__main__":
 
 from typing import Any
 
-from bot.src.utils.db_utils import MethodsOfDatabase
-from bot.src.database.models import UserAllInfo
+from src.utils.db_utils import MethodsOfDatabase
+from src.database.models import UserAllInfo
 
 from src.services.OpenMeteo import OpenMeteo
-from src.core.Logging import get_logger
+from src.core import get_logger
 
 
 # TODO переделать всё под бд
@@ -29,7 +29,7 @@ class WeatherService:
         self._open_meteo = OpenMeteo()
 
     def get_weather_now(
-        self, user_id: int, db: MethodsOfDatabase
+        self, user_id: int, usr_loc: dict[str, Any]
     ) -> dict[str, Any] | None:
         """
         Get current weather for user
@@ -41,8 +41,6 @@ class WeatherService:
             dict | None: Weather data or None if error
         """
         try:
-            usr_loc = db.find_by_one_user_id(model=UserAllInfo, user_id=user_id)
-
             if not usr_loc:
                 self._lg.warning(f"No location found for user {user_id}")
                 return None

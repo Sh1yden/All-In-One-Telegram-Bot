@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class SettingsSchema(BaseSettings):
     # TELEGRAM
     TELEGRAM_BOT_TOKEN: str
+    # TG WEBHOOK
+    TELEGRAM_WEBHOOK_SECRET: str
 
     # TUNA TUNNELS
     TUNA_TOKEN: str

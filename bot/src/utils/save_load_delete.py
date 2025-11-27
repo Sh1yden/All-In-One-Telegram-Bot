@@ -2,7 +2,7 @@ import json
 from typing import Any
 from pathlib import Path
 
-from bot.src.core import get_logger
+from src.core import get_logger
 
 _lg = get_logger()
 

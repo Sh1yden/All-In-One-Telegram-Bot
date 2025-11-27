@@ -3,8 +3,8 @@ from aiogram.filters import Command
 from aiogram.types import Message, User
 from fluentogram import TranslatorRunner
 
-from bot.src.utils.db_utils import MethodsOfDatabase
-from bot.src.database.models import UserAllInfo
+from src.utils.db_utils import MethodsOfDatabase
+from src.database.models import UserAllInfo
 
 from src.keyboards import (
     get_btns_start,

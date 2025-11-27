@@ -6,7 +6,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, User, Update
 from fluentogram import TranslatorHub
 
-from bot.src.utils.db_utils import MethodsOfDatabase
+from src.utils.db_utils import MethodsOfDatabase
 
 from cachetools import TTLCache
 

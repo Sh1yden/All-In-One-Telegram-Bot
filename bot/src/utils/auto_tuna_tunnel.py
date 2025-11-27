@@ -2,7 +2,7 @@ import json
 import subprocess
 from typing import Tuple
 
-from bot.src.core.Logging import get_logger
+from src.core import get_logger
 
 _lg = get_logger()
 
