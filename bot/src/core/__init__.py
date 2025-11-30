@@ -1,3 +1,4 @@
-__all__ = ["get_logger"]
+__all__ = ["get_logger", "setup_logging"]
 
-from .Logging import get_logger
+from .logger_config import setup_logging
+from .logger import get_logger, LoggerMixin

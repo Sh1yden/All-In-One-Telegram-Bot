@@ -74,13 +74,15 @@ async def command_help_handler(message: Message, locale: TranslatorRunner):
 
 # обработка команды /weatherMenu
 @router.message(Command("weatherMenu"))
-async def command_weather_handler(message: Message, locale: TranslatorRunner) -> None:
+async def command_weather_handler(
+    message: Message, locale: TranslatorRunner, db: MethodsOfDatabase
+) -> None:
 
     user: User | None = message.from_user
 
     await message.answer(
         text=locale.message_weather_menu(),
-        reply_markup=get_btns_weather(user.id, locale),
+        reply_markup=get_btns_weather(user_id=user.id, locale=locale, db=db),
     )
 
 

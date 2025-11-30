@@ -1,3 +1,4 @@
+from pathlib import Path
 import asyncio
 
 from aiohttp import web
@@ -26,11 +27,12 @@ from src.utils import (
 from src.database.core import SessionLocal
 
 import logging
-from src.core import get_logger
+from src.core import get_logger, setup_logging
 
 
 storage = MemoryStorage()
 
+setup_logging(level="DEBUG")
 _lg = get_logger()
 _lg.debug("Logger init.")
 
