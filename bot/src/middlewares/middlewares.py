@@ -6,8 +6,6 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, User, Update
 from fluentogram import TranslatorHub
 
-from src.utils.db_utils import MethodsOfDatabase
-
 from cachetools import TTLCache
 
 from src.core import get_logger
@@ -67,9 +65,9 @@ class TranslateMiddleware(BaseMiddleware):
 class DataBaseMiddleware(BaseMiddleware):  # pylint: disable=too-few-public-methods
     """Data base middleware."""
 
-    def __init__(self, db: MethodsOfDatabase):
+    def __init__(self, repos: Dict[str, Any]):
         super().__init__()
-        self.db = db
+        self.repos = repos
 
     async def __call__(  # type: ignore
         self,
@@ -77,5 +75,5 @@ class DataBaseMiddleware(BaseMiddleware):  # pylint: disable=too-few-public-meth
         event: Update,
         data: Dict[str, Any],
     ) -> Any:
-        data["db"] = self.db
+        data["repos"] = self.repos
         return await handler(event, data)

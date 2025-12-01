@@ -8,9 +8,6 @@ if __name__ == "__main__":
     sys.path.insert(0, str(bot_dir))
 
 from typing import Type, Any, TypeVar
-import pickle
-
-import redis
 
 from aiogram.types import User
 
@@ -18,6 +15,7 @@ from sqlalchemy import Engine, inspect, exists, select, func
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
 
 from src.core import get_logger
+from src.utils.cache import RedisCache
 
 # TypeVar для generic типизации
 T = TypeVar("T", bound=DeclarativeBase)
@@ -50,7 +48,7 @@ class MethodsOfDatabase:
         self.session_factory = session_factory
         self.base = base
         self.engine = engine
-        self.redis_connection = self.connect_to_redis()
+        self.cache = RedisCache()
 
         self.create_tables_and_database()
 
@@ -88,114 +86,6 @@ class MethodsOfDatabase:
         except Exception as e:
             self._lg.critical(f"Failed to create tables: {e}.", exc_info=True)
             return False
-
-    def connect_to_redis(self) -> redis.Redis | None:
-        try:
-
-            settings_redis_db = {
-                "host": "localhost",
-                "port": 6379,
-                "db": 0,
-            }
-
-            return redis.Redis(
-                host=settings_redis_db["host"],
-                port=settings_redis_db["port"],
-                db=settings_redis_db["db"],
-            )
-
-        except Exception as e:
-            self._lg.error(f"Internal error: {e}")
-
-    def deserialize_redis_data(self, user_id: int) -> dict | None:
-        """
-        Получает и десериализует данные из Redis
-
-        Returns:
-            dict, или None если данных нет
-        """
-        try:
-            data = self.get_data_from_redis(key=user_id)
-
-            if data is None:
-                return None
-
-            if isinstance(data, bytes):
-                return pickle.loads(data)
-
-            if isinstance(data, dict):
-                return data
-
-            return None
-
-        except Exception as e:
-            self._lg.error(f"Failed to deserialize Redis data for user {user_id}: {e}")
-            return None
-
-    def cache_data_in_redis(self, key: Any, data: Any) -> None:
-        try:
-            self.redis_connection.set(key, pickle.dumps(data))
-
-            self._lg.debug(f"Successfully cache data in redis - {data}.")
-
-        except Exception as e:
-            self._lg.error("NOT Successfully cache data in redis.")
-            self._lg.error(f"Internal error: {e}")
-
-    def update_redis_cache(self, user_id: int, updated_fields: dict[str, dict]) -> None:
-        """
-        Обновляет только изменённые поля в Redis, не затрагивая остальные
-
-        Args:
-            user_id: ID пользователя
-            updated_fields: Словарь с изменёнными полями {field: {"old": ..., "new": ...}}
-        """
-        try:
-            # Получаем и десериализуем данные из Redis
-            cached_data = self.deserialize_redis_data(user_id)
-
-            if cached_data is None:
-                cached_data = {}
-
-            # Обновляем только новые поля
-            for field, changes in updated_fields.items():
-                cached_data[field] = changes["new"]
-
-            # Сохраняем обратно
-            self.cache_data_in_redis(key=user_id, data=cached_data)
-
-            self._lg.debug(
-                f"Redis cache updated for user {user_id}: {list(updated_fields.keys())}"
-            )
-
-        except Exception as e:
-            self._lg.error(
-                f"Failed to update Redis cache for user {user_id}: {e}", exc_info=True
-            )
-
-    def delete_data_from_redis(self, key: Any) -> None:
-        try:
-            self.redis_connection.delete(key)
-
-            self._lg.debug(f"Successfully delete data in redis.")
-
-        except Exception as e:
-            self._lg.error("NOT Successfully delete data in redis.")
-            self._lg.error(f"Internal error: {e}")
-
-    def get_data_from_redis(self, key: Any) -> Any | None:
-        try:
-            cached_data = self.redis_connection.get(key)
-
-            if cached_data:
-                self._lg.debug("Successfully get redis cached data.")
-                return cached_data
-            else:
-                self._lg.error("NOT Successfully get redis cached data.")
-                return None
-
-        except Exception as e:
-            self._lg.error(f"Internal error: {e}")
 
     def create_one_user(
         self,
@@ -259,7 +149,7 @@ class MethodsOfDatabase:
             session.refresh(new_user)
 
             # Redis cache
-            self.cache_data_in_redis(key=user_id, data=data)  # type: ignore
+            self.cache.set(key=user_id, data=data)  # type: ignore
 
             self._lg.debug(f"User created: {new_user.user_id}.")  # type: ignore
             return True, f"User {new_user.user_id} created successfully."  # type: ignore
@@ -301,7 +191,7 @@ class MethodsOfDatabase:
             session.commit()
 
             # Redis cache
-            self.delete_data_from_redis(key=user_id)
+            self.cache.delete(key=user_id)
 
             self._lg.debug(f"User deleted: {user_id} ({username}).")
             return True, f"User {user_id} deleted successfully."
@@ -373,7 +263,7 @@ class MethodsOfDatabase:
             session.refresh(user)
 
             # Redis cache
-            self.update_redis_cache(user_id=user_id, updated_fields=updated_fields)
+            self.cache.update(user_id, updated_fields)
 
             self._lg.debug(f"User {user_id} updated: {list(updated_fields.keys())}.")
             return True, f"Updated {len(updated_fields)} fields.", updated_fields
@@ -398,10 +288,8 @@ class MethodsOfDatabase:
         """
         session = self._get_session()
         try:
-            cached_data_bytes = self.get_data_from_redis(key=user_id)
-
-            if cached_data_bytes:
-                return bool(cached_data_bytes)
+            if self.cache.exists(user_id):
+                return True
             else:
                 # Используем EXISTS для оптимизации
                 stmt = select(exists().where(model.user_id == user_id))  # type: ignore
@@ -428,7 +316,7 @@ class MethodsOfDatabase:
         """
         session = self._get_session()
         try:
-            cached_data = self.deserialize_redis_data(user_id=user_id)
+            cached_data = self.cache.get(user_id)
 
             if cached_data:
                 self._lg.debug(f"Cached data (deserialized) - {cached_data}")
@@ -447,7 +335,7 @@ class MethodsOfDatabase:
                     self._lg.debug(f"User {user_id} location not found in cache")
                     return False
                 else:
-                    self._lg.debug(f"Cached data not isinstance!!!")
+                    self._lg.debug("Cached data not isinstance!!!")
                     return False
 
             else:
@@ -496,7 +384,7 @@ class MethodsOfDatabase:
         """
         session = self._get_session()
         try:
-            cached_data = self.deserialize_redis_data(user_id=user_id)
+            cached_data = self.cache.get(user_id)
 
             if cached_data:
                 return cached_data

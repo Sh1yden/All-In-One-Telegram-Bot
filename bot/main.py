@@ -22,9 +22,9 @@ from src.handlers import router as main_router
 from src.utils import (
     settings,
     start_tuna,
-    get_database_methods,
 )
 from src.database.core import SessionLocal
+from src.database.repositories.factory import create_repositories
 
 import logging
 from src.core import get_logger, setup_logging
@@ -88,7 +88,7 @@ def create_translator_hub() -> TranslatorHub | None:
         _lg.critical(f"Internal error: {e}.")
 
 
-def create_dispatcher(db) -> Dispatcher | None:
+def create_dispatcher(repos) -> Dispatcher | None:
     """
     Create and configure Dispatcher with routers
 
@@ -108,10 +108,10 @@ def create_dispatcher(db) -> Dispatcher | None:
         dp.include_router(main_router)
 
         dp.message.middleware(TranslateMiddleware())
-        dp.message.outer_middleware(DataBaseMiddleware(db=db))
+        dp.message.outer_middleware(DataBaseMiddleware(repos=repos))
 
         dp.callback_query.middleware(TranslateMiddleware())
-        dp.callback_query.outer_middleware(DataBaseMiddleware(db=db))
+        dp.callback_query.outer_middleware(DataBaseMiddleware(repos=repos))
 
         _lg.info("Dispatcher created successfully.")
         return dp
@@ -174,6 +174,7 @@ def create_bot() -> Bot | None:
 
 async def run_bot() -> None:
     """Async main app function."""
+    repos = None
     try:
         _lg.debug("Start main func.")
 
@@ -182,10 +183,10 @@ async def run_bot() -> None:
             _lg.critical("Failed to create a bot. Exiting.")
             return
 
-        db_methods = get_database_methods(SessionLocal)
+        repos = create_repositories(SessionLocal)
         _lg.info("Database initialized.")
 
-        dp = create_dispatcher(db_methods)
+        dp = create_dispatcher(repos)
         if dp is None:
             _lg.critical("Failed to create a dispatcher. Exiting.")
             return
@@ -259,9 +260,9 @@ async def run_bot() -> None:
             _lg.error(f"Error closing storage: {e}.")
 
         # Close database
-        if db_methods:  # type: ignore
+        if repos:  # type: ignore
             try:
-                db_methods.close()
+                repos["user_repo"].db_methods.close()
                 _lg.info("Database closed.")
             except Exception as e:
                 _lg.error(f"Error closing database: {e}.")

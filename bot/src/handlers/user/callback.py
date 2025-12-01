@@ -9,8 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
 from fluentogram import TranslatorRunner
 
-from src.utils.db_utils import MethodsOfDatabase
-from src.database.models import UserAllInfo
+from typing import Dict, Any
 
 from src.services import get_cord_from_city
 from src.services import get_city_from_cord
@@ -47,11 +46,11 @@ async def weather_callback_handler(
     callback: CallbackQuery,
     callback_data: WeatherCallback,
     locale: TranslatorRunner,
-    db: MethodsOfDatabase,
+    repos: Dict[str, Any],
 ) -> None:
     """Handle weather menu callbacks"""
 
-    _lg.debug(f"CALLBACK HANDLER CALLED!")
+    _lg.debug("CALLBACK HANDLER CALLED!")
     _lg.debug(f"Action: {callback_data.action}")
     _lg.debug(f"User: {callback.from_user.id}")
     _lg.debug(f"Message exists: {callback.message is not None}")
@@ -65,30 +64,27 @@ async def weather_callback_handler(
 
     message: Message | None = callback.message
     user: User | None = callback.from_user
+    user_repo = repos["user_repo"]
 
     try:
         # 📚 Вызов всего меню
         if callback_data.action == "weather_menu":
             await message.edit_text(
                 text=locale.message_weather_menu(),
-                reply_markup=get_btns_weather(user_id=user.id, locale=locale, db=db),
+                reply_markup=get_btns_weather(
+                    user_id=user.id, locale=locale, user_repo=user_repo
+                ),
             )
 
         # 🌡 Сейчас
         elif callback_data.action == "weather_now":
 
-            if db.user_location_exists(UserAllInfo, user.id):
-                location = db.find_by_one_user_id(
-                    model=UserAllInfo,
-                    user_id=user.id,
-                )
+            if user_repo.has_location(user.id):
+                location = user_repo.get_by_id(user.id)
 
                 city = location.get("city")
 
-                usr_loc_dict = db.find_by_one_user_id(
-                    model=UserAllInfo,
-                    user_id=user.id,
-                )
+                usr_loc_dict = user_repo.get_by_id(user.id)
 
                 wn_all_ser_dict = WeatherService().get_weather_now(
                     user_id=user.id,
@@ -184,8 +180,8 @@ async def weather_callback_handler(
 
         # 📍 Локация
         elif callback_data.action == "weather_location":
-            if db.user_location_exists(UserAllInfo, user.id):
-                location = db.find_by_one_user_id(model=UserAllInfo, user_id=user.id)
+            if user_repo.has_location(user.id):
+                location = user_repo.get_by_id(user.id)
 
                 city = location.get("city")
                 latitude = location.get("latitude")
@@ -266,7 +262,7 @@ async def device_callback_handler(
 # LOCATION
 @router.message(LocationState.waiting_for_city_phone, F.location)
 async def handle_location_phone(
-    message: Message, locale: TranslatorRunner, db: MethodsOfDatabase, state: FSMContext
+    message: Message, locale: TranslatorRunner, repos: Dict[str, Any], state: FSMContext
 ) -> None:
     """Handle location from phone"""
     try:
@@ -296,13 +292,8 @@ async def handle_location_phone(
 
         _lg.debug(f"User city on phone is - {city}.")
 
-        success = db.update_one_user_by_id(
-            UserAllInfo,
-            user.id,
-            city=city,
-            latitude=lat,
-            longitude=lon,
-        )
+        user_repo = repos["user_repo"]
+        success = user_repo.update_location(user.id, city, lat, lon)
 
         if success:
             _lg.debug(str(success))
@@ -327,7 +318,7 @@ async def handle_location_phone(
 
 @router.message(LocationState.waiting_for_city_pc, F.text)
 async def handle_location_pc(
-    message: Message, locale: TranslatorRunner, db: MethodsOfDatabase, state: FSMContext
+    message: Message, locale: TranslatorRunner, repos: Dict[str, Any], state: FSMContext
 ) -> None:
     """Handle location from PC (city name as text)"""
     try:
@@ -372,13 +363,8 @@ async def handle_location_pc(
 
         _lg.debug(f"User city on PC is - {city}.")
 
-        success = db.update_one_user_by_id(
-            UserAllInfo,
-            user.id,
-            city=city,
-            latitude=lat,
-            longitude=lon,
-        )
+        user_repo = repos["user_repo"]
+        success = user_repo.update_location(user.id, city, lat, lon)
 
         if success:
             _lg.debug(str(success))

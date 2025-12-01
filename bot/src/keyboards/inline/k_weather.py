@@ -2,8 +2,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from fluentogram import TranslatorRunner
 
-from src.utils.db_utils import MethodsOfDatabase
-from src.database.models import UserAllInfo
+from src.database.repositories import UserRepository
 
 from src.filters import WeatherCallback
 
@@ -11,7 +10,7 @@ from src.filters import WeatherCallback
 def get_btns_weather(
     user_id: int,
     locale: TranslatorRunner,
-    db: MethodsOfDatabase,
+    user_repo: UserRepository,
 ) -> InlineKeyboardMarkup:
     """Кнопки снизу сообщения после команды /weather."""
 
@@ -58,9 +57,8 @@ def get_btns_weather(
     )
 
     # 📍 Локация:
-    city = db.find_by_one_user_id(model=UserAllInfo, user_id=user_id).get(
-        "city", "Ваша локация"
-    )
+    user_data = user_repo.get_by_id(user_id)
+    city = user_data.get("city", "Ваша локация") if user_data else "Ваша локация"
     builder.row(
         InlineKeyboardButton(
             text=locale.button_weather_menu_location() + city,

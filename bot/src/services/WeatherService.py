@@ -45,8 +45,8 @@ class WeatherService:
                 self._lg.warning(f"No location found for user {user_id}")
                 return None
 
-            lat = usr_loc.get("latitude")
-            lon = usr_loc.get("longitude")
+            lat = usr_loc.get("latitude", None)
+            lon = usr_loc.get("longitude", None)
 
             # Validate coordinates
             if lat is None or lon is None:
@@ -116,5 +116,7 @@ if __name__ == "__main__":
 
     db = get_database_methods(SessionLocal)
 
-    result = ws.get_weather_now(user_id=5080080714, db=db)
+    result = ws.get_weather_now(
+        user_id=5080080714, usr_loc={"latitude": 51.73733, "longitude": 36.18735}
+    )
     _lg.debug(f"Weather data: {result}")

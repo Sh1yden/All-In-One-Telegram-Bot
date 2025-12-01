@@ -3,8 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import Message, User
 from fluentogram import TranslatorRunner
 
-from src.utils.db_utils import MethodsOfDatabase
-from src.database.models import UserAllInfo
+from typing import Dict, Any
 
 from src.keyboards import (
     get_btns_start,
@@ -23,7 +22,7 @@ _lg = get_logger()
 # обработка команды /start
 @router.message(Command("start"))
 async def command_start_handler(
-    message: Message, locale: TranslatorRunner, db: MethodsOfDatabase
+    message: Message, locale: TranslatorRunner, repos: Dict[str, Any]
 ) -> None:
     """Handle /start command and display welcome message"""
     try:
@@ -48,15 +47,10 @@ async def command_start_handler(
         )
 
         # Создание пользователя в БД
-        if not db.user_exists(UserAllInfo, user.id):
-            success, msg = db.create_one_user(
-                model=UserAllInfo,
-                user=user,
-            )
-            if success:
-                _lg.debug(f"New user created: {user.id}")
-            else:
-                _lg.error(f"Failed to create user: {msg}")
+        user_repo = repos["user_repo"]
+        if not user_repo.exists(user.id):
+            user_repo.save_from_telegram_user(user)
+            _lg.debug(f"New user created: {user.id}")
 
     except Exception as e:
         _lg.critical(f"Internal error: {e}.")
@@ -75,14 +69,17 @@ async def command_help_handler(message: Message, locale: TranslatorRunner):
 # обработка команды /weatherMenu
 @router.message(Command("weatherMenu"))
 async def command_weather_handler(
-    message: Message, locale: TranslatorRunner, db: MethodsOfDatabase
+    message: Message, locale: TranslatorRunner, repos: Dict[str, Any]
 ) -> None:
 
     user: User | None = message.from_user
+    user_repo = repos["user_repo"]
 
     await message.answer(
         text=locale.message_weather_menu(),
-        reply_markup=get_btns_weather(user_id=user.id, locale=locale, db=db),
+        reply_markup=get_btns_weather(
+            user_id=user.id, locale=locale, user_repo=user_repo
+        ),
     )
 
 
