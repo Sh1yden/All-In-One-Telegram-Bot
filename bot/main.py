@@ -1,4 +1,3 @@
-from pathlib import Path
 import asyncio
 
 from aiohttp import web
@@ -33,8 +32,7 @@ from src.core import get_logger, setup_logging
 storage = MemoryStorage()
 
 setup_logging(level="DEBUG")
-_lg = get_logger()
-_lg.debug("Logger init.")
+_lg = get_logger(__name__)
 
 # Get Telegram bot Token
 TOKEN = settings.TELEGRAM_BOT_TOKEN

@@ -7,116 +7,278 @@ if __name__ == "__main__":
     bot_dir = Path(__file__).parent.parent.parent
     sys.path.insert(0, str(bot_dir))
 
-from typing import Any
+import asyncio
 
-from src.utils.db_utils import MethodsOfDatabase
-from src.database.models import UserAllInfo
+from fluentogram import TranslatorRunner
 
-from src.services.OpenMeteo import OpenMeteo
-from src.core import get_logger
+from src.services import (
+    get_cord_from_city,
+    get_city_from_cord,
+    opm_get_weather_now,
+)
+from src.core import get_logger, setup_logging
+
+setup_logging(level="DEBUG")
+_lg = get_logger()
 
 
-# TODO переделать всё под бд
+async def agrregated_weather(
+    results: dict,
+    priority_order: list[str] = [
+        "OpenMeteo",
+        "VisualCrossing",
+        "WeatherAPI",
+        "Yandex",
+    ],
+) -> tuple[dict, list] | None:
+    """Aggregate by priority."""
+    try:
+        aggregated = {}
+        sources = []
+        for api_name in priority_order:
+            if api_name in results:
+                data = results[api_name]
+                if data and not isinstance(data, Exception):
+                    sources.append(api_name)
+                    for key, value in data.items():
+                        if key not in aggregated and value not in [None, "ERROR"]:
+                            aggregated[key] = value
+
+        return aggregated, sources
+
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
 
 
-class WeatherService:
-    """Service for weather data management and API coordination"""
+async def avg_and_filtered_temp(sources, results: dict) -> tuple[int, int] | None:
+    """Filter and"""
+    try:
+        temps = []
+        for api_name in sources:
+            if (
+                api_name in results
+                and results[api_name]
+                and "temp" in results[api_name]
+            ):
+                temp_val = results[api_name]["temp"]
+                if temp_val is not None:  # TODO улучшить фильтрацию
+                    try:
+                        temps.append(float(temp_val))
+                    except ValueError as e:
+                        _lg.error(f"ValueError: {e}")
 
-    def __init__(self) -> None:
-        self._lg = get_logger()
-        self._lg.debug("Logger init.")
+        avg_temp = round(sum(temps) / len(temps) if temps else 0)
+        avg_filtered = round(avg_temp)  # ! Пока без фильтрации
 
-        self._open_meteo = OpenMeteo()
+        return avg_temp, avg_filtered
 
-    def get_weather_now(
-        self, user_id: int, usr_loc: dict[str, Any]
-    ) -> dict[str, Any] | None:
-        """
-        Get current weather for user
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
 
-        Args:
-            user_id: User ID
 
-        Returns:
-            dict | None: Weather data or None if error
-        """
-        try:
-            if not usr_loc:
-                self._lg.warning(f"No location found for user {user_id}")
-                return None
+async def decode_weather_code(locale: TranslatorRunner, code: int) -> str:
+    WEATHER_CODES = {
+        404: locale.message_service_error_not_found_in_service(),
+        0: "Ясно",
+        1: "Преимущественно ясно",
+        2: "Переменная облачность",
+        3: "Пасмурно",
+        45: "Туман",
+        48: "Инейный туман",
+        51: "Морось слабая",
+        53: "Морось умеренная",
+        55: "Морось сильная",
+        56: "Ледяная морось слабая",
+        57: "Ледяная морось сильная",
+        61: "Дождь слабый",
+        63: "Дождь умеренный",
+        65: "Дождь сильный",
+        66: "Ледяной дождь слабый",
+        67: "Ледяной дождь сильный",
+        71: "Снег слабый",
+        73: "Снег умеренный",
+        75: "Снег сильный",
+        77: "Снежные зерна",
+        80: "Ливень слабый",
+        81: "Ливень умеренный",
+        82: "Ливень сильный",
+        85: "Снежный ливень слабый",
+        86: "Снежный ливень сильный",
+        95: "Гроза слабая",
+        96: "Гроза с градом",
+        99: "Гроза сильная с градом",
+    }
+    return WEATHER_CODES.get(code, f"Код {code}")
 
-            lat = usr_loc.get("latitude", None)
-            lon = usr_loc.get("longitude", None)
 
-            # Validate coordinates
-            if lat is None or lon is None:
-                self._lg.warning(f"Missing coordinates for user {user_id}")
-                return None
+async def connect_templates(
+    locale: TranslatorRunner, results: dict, sources, temp_unit
+):
+    try:
+        ERROR = locale.message_service_error_not_found_in_service()
 
-            try:
-                lat = float(lat)
-                lon = float(lon)
-            except (ValueError, TypeError):
-                self._lg.warning(f"Invalid coordinates for user {user_id}")
-                return None
+        sources_text = ""
+        for i, source_name in enumerate(sources, 1):
+            data = results[source_name]
+            temp = data.get("temp", ERROR)
+            sources_text += (
+                locale.message_weather_now_source_template(
+                    num=i, source_name=source_name, temp=temp, temp_unit=temp_unit
+                )
+                + "\n"
+            )
 
-            # Get weather from OpenMeteo
-            user_weather_now_open_meteo = self._open_meteo.get_weather_now_api(lat, lon)
+            # Summary
+            weather_code = data.get("weather_code", 404)
+            condition = await decode_weather_code(locale=locale, code=weather_code)
+            feels_like = data.get("feels_like", temp)
+            humidity = data.get("humidity", ERROR)
+            humidity_unit = data.get("humidity_unit", ERROR)
+            wind = data.get("wind", ERROR)
+            wind_unit = data.get("wind_unit", ERROR)
 
-            if not user_weather_now_open_meteo:
-                self._lg.error("Failed to get weather from OpenMeteo")
-                return None
+            sources_text += (
+                locale.message_weather_now_summary_template(
+                    condition=condition,
+                    feels_like=feels_like,
+                    temp_unit=temp_unit,
+                    humidity=humidity,
+                    humidity_unit=humidity_unit,
+                    wind=wind,
+                    wind_unit=wind_unit,
+                )
+                + "\n"
+            )
 
-            user_weather_now_all = {"OpenMeteo": user_weather_now_open_meteo}
+            return sources_text
 
-            return user_weather_now_all
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
 
-        except Exception as e:
-            self._lg.error(f"Internal error: {e}")
+
+async def get_weather_now(
+    locale: TranslatorRunner,
+    user_id: int,
+    city: str | None = None,
+    latitude: str | float | None = None,
+    longitude: str | float | None = None,
+    usr_loc: dict[str, str] | None = None,
+) -> str | None:
+    """Get now weather forecast - NOT IMPLEMENTED"""
+    try:
+        if usr_loc is not None:
+            latitude = usr_loc.get("latitude", None)
+            longitude = usr_loc.get("longitude", None)
+
+        if city is not None and latitude is None and longitude is None:
+            cord = await get_cord_from_city(name_city=city)
+
+            latitude = cord.get("lat", None)
+            longitude = cord.get("lon", None)
+
+        if city is None and latitude and longitude:
+            city = await get_city_from_cord(latitude=latitude, longitude=longitude)
+
+        if latitude is None or longitude is None:
+            _lg.error(f"Latitude: {latitude}, and Longitude: {longitude}. Error!")
             return None
 
-    @staticmethod
-    def get_weather_hours() -> None:
-        """Get hourly weather forecast - NOT IMPLEMENTED"""
-        pass
+        # ! TEST
 
-    @staticmethod
-    async def get_weather_5d() -> None:
-        """Get 5-day weather forecast - NOT IMPLEMENTED"""
-        pass
+        results = {}
+        results["OpenMeteo"] = await opm_get_weather_now(
+            locale=locale,
+            latitude=latitude,
+            longitude=longitude,
+        )
+        # TODO добавить другие сервисы так же как сверху
 
-    @staticmethod
-    async def get_weather_day_night() -> None:
-        """Get day/night weather - NOT IMPLEMENTED"""
-        pass
+        aggregated, sources = await agrregated_weather(results=results)
 
-    @staticmethod
-    async def get_weather_rain() -> None:
-        """Get precipitation data - NOT IMPLEMENTED"""
-        pass
+        ERROR = locale.message_service_error_not_found_in_service()
 
-    @staticmethod
-    async def get_weather_wind_pressure() -> None:
-        """Get wind and pressure data - NOT IMPLEMENTED"""
-        pass
+        temp_unit = aggregated.get("temp_unit", ERROR)
+        avg_temp, avg_filtered = await avg_and_filtered_temp(
+            sources=sources, results=results
+        )
+        day_or_night_emoji = (
+            locale.emoji_weather_now_day()
+            if aggregated.get("is_day")
+            else locale.emoji_weather_now_night()
+        )
+        time = aggregated.get("time", ERROR)
 
-    @staticmethod
-    def get_loading_message() -> str:
-        """Get loading message text"""
-        return "🔄 Загрузка..."
+        header = locale.message_weather_now_header(
+            city=city,  # Из бд пользователя
+            time=time,
+            day_or_night_emoji=day_or_night_emoji,
+            avg_temp=avg_temp,
+            temp_unit=temp_unit,
+            avg_filtered=avg_filtered,
+        )
+        sources_text = await connect_templates(
+            locale=locale,
+            results=results,
+            sources=sources,
+            temp_unit=temp_unit,
+        )
+
+        all_msg = header + "\n" + sources_text.strip()
+
+        return all_msg
+
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
+
+
+@staticmethod
+def get_weather_hours() -> None:
+    """Get hourly weather forecast - NOT IMPLEMENTED"""
+    try:
+        pass
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
+
+
+@staticmethod
+async def get_weather_5d() -> None:
+    """Get 5-day weather forecast - NOT IMPLEMENTED"""
+    try:
+        pass
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
+
+
+@staticmethod
+async def get_weather_day_night() -> None:
+    """Get day/night weather - NOT IMPLEMENTED"""
+    try:
+        pass
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
+
+
+@staticmethod
+async def get_weather_rain() -> None:
+    """Get precipitation data - NOT IMPLEMENTED"""
+    try:
+        pass
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
+
+
+@staticmethod
+async def get_weather_wind_pressure() -> None:
+    """Get wind and pressure data - NOT IMPLEMENTED"""
+    try:
+        pass
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
 
 
 if __name__ == "__main__":
-    from src.database.core import SessionLocal
-    from src.database.models import UserAllInfo
-    from src.utils import get_database_methods
 
-    _lg = get_logger()
-    ws = WeatherService()
+    async def main():
+        pass
 
-    db = get_database_methods(SessionLocal)
-
-    result = ws.get_weather_now(
-        user_id=5080080714, usr_loc={"latitude": 51.73733, "longitude": 36.18735}
-    )
-    _lg.debug(f"Weather data: {result}")
+    asyncio.run(main())

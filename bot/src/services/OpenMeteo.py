@@ -1,69 +1,143 @@
-import requests
-from typing import Any
+import sys
+from pathlib import Path
 
-from src.core import get_logger
+# Для прямого запуска файла
+if __name__ == "__main__":
+    # Добавляем bot/ в sys.path
+    bot_dir = Path(__file__).parent.parent.parent
+    sys.path.insert(0, str(bot_dir))
+
+import asyncio
+
+from fluentogram import TranslatorRunner
+
+from src.services import get_cord_from_city
+from src.core import get_logger, setup_logging
+from src.utils import get_raw_link_api, req_data
 
 
-class OpenMeteo:
-    """Service for interacting with Open-Meteo weather API"""
+setup_logging(level="DEBUG")
+_lg = get_logger(__name__)
 
-    def __init__(self) -> None:
-        self._lg = get_logger()
-        self._lg.debug("OpenMeteo service initialized.")
 
-    def get_weather_now_api(self, lat: float, lon: float) -> dict[str, Any] | None:
-        """
-        Get current weather data from Open-Meteo API
+async def opm_get_weather_now(
+    locale: TranslatorRunner | None,  # ! Закоментить для теста
+    city: str | None = None,
+    latitude: str | float | None = None,
+    longitude: str | float | None = None,
+) -> dict[str, dict[str, str | bool | None]] | None:
+    """
+    Locale = None ONLY for test. \n
+    Needed city or lat and lon.
+    """  # TODO
+    try:
+        url = await get_raw_link_api(api_name="OpenMeteo")
 
-        Args:
-            lat: Latitude coordinate
-            lon: Longitude coordinate
-
-        Returns:
-            dict | None: Weather data or None if error
-        """
-        try:
-            url = (
-                f"https://api.open-meteo.com/v1/forecast?"
-                f"latitude={lat}&longitude={lon}&hourly="
-                f"&current=temperature_2m,is_day,relative_humidity_2m,"
-                f"weather_code,cloud_cover,wind_speed_10m&timezone=auto"
-            )
-
-            self._lg.debug(f"Requesting weather data for {lat}, {lon}")
-
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-
-            data = response.json()
-
-            # Validate response structure
-            if not isinstance(data, dict):
-                self._lg.warning("Invalid response structure from API")
-                return None
-
-            if "current" not in data:
-                self._lg.warning("Missing 'current' key in API response")
-                return None
-
-            self._lg.debug("Weather data retrieved successfully")
-            return data
-
-        except requests.Timeout:
-            self._lg.error("API request timeout")
+        if url is None:
             return None
-        except requests.RequestException as e:
-            self._lg.error(f"Request error: {e}")
-            return None
-        except ValueError as e:
-            self._lg.error(f"Error parsing JSON response: {e}")
-            return None
-        except Exception as e:
-            self._lg.error(f"Internal error: {e}")
-            return None
+
+        if city is not None and latitude is None and longitude is None:
+            cord = await get_cord_from_city(name_city=city)
+
+            latitude = cord.get("lat", None)
+            longitude = cord.get("lon", None)
+
+            if latitude is None or longitude is None:
+                _lg.warning(
+                    f"Latitude: {latitude}, and Longitude: {longitude}. Error request get_cord_from_city."
+                )
+
+        params = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "current": [
+                "temperature_2m",
+                "apparent_temperature",
+                "is_day",
+                "relative_humidity_2m",
+                "weather_code",
+                "cloud_cover",
+                "wind_speed_10m",
+            ],
+            "wind_speed_unit": "ms",
+            "timezone": "auto",
+        }
+
+        req_res = await req_data(url=url, params=params)
+
+        if locale is None:
+            ERROR = "❌ Ошибка: не удалось получить данные от сервиса."  # ! Для теста
+        ERROR = (
+            locale.message_service_error_not_found_in_service()
+        )  # ! Для теста без locale, locale=None
+
+        current_values = req_res.get("current", ERROR)
+        current_units = req_res.get("current_units", ERROR)
+
+        raw_time = current_values.get("time", None)
+        if raw_time is None:
+            time = ERROR
+        time = raw_time[11:]
+        is_day = bool(current_values.get("is_day", ERROR))
+        feels_like = round(current_values.get("apparent_temperature", ERROR))
+        temp = current_values.get("temperature_2m", ERROR)
+        temp_unit = current_units.get("temperature_2m", ERROR)
+        wind = current_values.get("wind_speed_10m", ERROR)
+        wind_unit = current_units.get("wind_speed_10m", ERROR)
+        weather_code = current_values.get("weather_code", ERROR)
+        humidity = current_values.get("relative_humidity_2m", ERROR)
+        humidity_unit = current_units.get("relative_humidity_2m", ERROR)
+
+        _lg.debug(f"Req_res is - {req_res}.")
+        _lg.debug(f"Raw_time is - {raw_time}.")
+        _lg.debug(f"Time is - {time}.")
+        _lg.debug(f"Is_day is - {is_day}.")
+        _lg.debug(f"Feels_like is - {feels_like}.")
+        _lg.debug(f"Temp is - {temp}.")
+        _lg.debug(f"Temp_unit is - {temp_unit}.")
+        _lg.debug(f"Wind is - {wind}.")
+        _lg.debug(f"Wind_unit is - {wind_unit}.")
+        _lg.debug(f"Weather_code is - {weather_code}.")
+        _lg.debug(f"Humidity is - {humidity}.")
+        _lg.debug(f"Humidity_unit is - {humidity_unit}.")
+
+        current_weather_dict = {
+            "time": time,
+            "is_day": is_day,
+            "feels_like": feels_like,
+            "temp": temp,
+            "temp_unit": temp_unit,
+            "wind": wind,
+            "wind_unit": wind_unit,
+            "weather_code": weather_code,
+            "humidity": humidity,
+            "humidity_unit": humidity_unit,
+        }
+
+        _lg.debug(f"Current_weather_dict is - {current_weather_dict}.")
+
+        return current_weather_dict
+
+    except Exception as e:
+        _lg.error(f"Internal error: {e}")
 
 
 if __name__ == "__main__":
-    om = OpenMeteo()
-    result = om.get_weather_now_api(51.5074, -0.1278)  # London coordinates
-    print(f"Weather data: {result}")
+
+    async def main():
+        latitude = 51.73733
+        longitude = 36.18735
+
+        OpenMeteo_data = await opm_get_weather_now(
+            locale=None,
+            latitude=latitude,
+            longitude=longitude,
+        )
+
+        all_data: dict = {
+            "OpenMeteo": OpenMeteo_data,
+        }
+
+        _lg.debug(f"All_data is - {all_data}")
+
+    asyncio.run(main())

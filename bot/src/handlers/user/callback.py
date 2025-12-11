@@ -17,12 +17,10 @@ from src.services import get_city_from_cord
 from src.utils import clear_state
 from src.states import LocationState
 
-from src.services.WeatherService import WeatherService
-
 from src.filters import DeviceCallback
 from src.filters import WeatherCallback
 
-# from src.services.WeatherService import WeatherService
+from src.services import get_weather_now
 
 from src.keyboards import (
     get_btns_start,
@@ -36,8 +34,6 @@ from src.core import get_logger
 
 router = Router()
 _lg = get_logger()
-
-_lg.debug("CALLBACK MODULE LOADED - ROUTER CREATED.")
 
 
 # WEATHER MENU
@@ -81,47 +77,19 @@ async def weather_callback_handler(
 
             if user_repo.has_location(user.id):
                 location = user_repo.get_by_id(user.id)
-
                 city = location.get("city")
 
-                usr_loc_dict = user_repo.get_by_id(user.id)
-
-                wn_all_ser_dict = WeatherService().get_weather_now(
+                all_msg = await get_weather_now(
+                    locale=locale,
                     user_id=user.id,
-                    usr_loc=usr_loc_dict,
-                )
-
-                time = wn_all_ser_dict.get("OpenMeteo").get("current").get("time")[11:]
-
-                _lg.debug(f"ALL INFO weather now ser - {wn_all_ser_dict}")
-
-                day_or_night_emoji = (
-                    locale.emoji_weather_now_day()
-                    if bool(
-                        wn_all_ser_dict.get("OpenMeteo").get("current").get("is_day")
-                    )
-                    else locale.emoji_weather_now_night()
-                )
-
-                avg_temp = 42
-                temp_unit = (
-                    wn_all_ser_dict.get("OpenMeteo")
-                    .get("current_units")
-                    .get("temperature_2m")
-                )
-                avg_filtered = 42.1
-
-                wnm = locale.message_weather_now_header(
                     city=city,
-                    time=time,
-                    day_or_night_emoji=day_or_night_emoji,
-                    avg_temp=avg_temp,
-                    temp_unit=temp_unit,
-                    avg_filtered=avg_filtered,
+                    usr_loc=location,
                 )
+
+                _lg.debug(f"all_msg is - {all_msg}")
 
                 await message.edit_text(
-                    text=wnm, reply_markup=get_btns_weather_now(locale)
+                    text=str(all_msg), reply_markup=get_btns_weather_now(locale)
                 )
             else:
                 await message.edit_text(
@@ -284,7 +252,7 @@ async def handle_location_phone(
 
         lat = location_phone.latitude
         lon = location_phone.longitude
-        city = get_city_from_cord(lat, lon, user_agent="TestApp/1.0")
+        city = await get_city_from_cord(lat, lon)
 
         if not city:
             _lg.warning(f"Failed to get city name for coordinates: {lat}, {lon}")
@@ -341,7 +309,7 @@ async def handle_location_pc(
             return
 
         # Get coordinates from city name
-        cord = get_cord_from_city(location_pc)
+        cord = await get_cord_from_city(location_pc)
 
         if not cord or "lat" not in cord or "lon" not in cord:
             _lg.warning(f"Failed to get coordinates for city: {location_pc}")
@@ -355,7 +323,7 @@ async def handle_location_pc(
         lon = cord["lon"]
 
         # Verify city name via reverse geocoding
-        city = get_city_from_cord(lat, lon, user_agent="TestApp/1.0")
+        city = await get_city_from_cord(lat, lon)
 
         if not city:
             _lg.warning(f"Failed to verify city name for coordinates: {lat}, {lon}")

@@ -11,6 +11,12 @@ class SettingsSchema(BaseSettings):
     TUNA_TOKEN: str
     TUNA_API_TOKEN: str
 
+    # SERVICES
+    # VisualCrossing
+    VISUAL_CROSSING_KEY: str
+    # WeatherAPI
+    WEATHER_API_KEY: str
+
     # Pydantic settings
     model_config = SettingsConfigDict(env_file=".env", extra="allow")
 
