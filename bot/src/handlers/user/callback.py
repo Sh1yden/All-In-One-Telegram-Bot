@@ -1,36 +1,28 @@
-from aiogram.types import (
-    Message,
-    CallbackQuery,
-    User,
-    Location,
-    ReplyKeyboardRemove,
-)
+from typing import Any, Dict
+
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram import Router, F
+from aiogram.types import (
+    CallbackQuery,
+    Location,
+    Message,
+    ReplyKeyboardRemove,
+    User,
+)
 from fluentogram import TranslatorRunner
 
-from typing import Dict, Any
-
-from src.services import get_cord_from_city
-from src.services import get_city_from_cord
-
-from src.utils import clear_state
-from src.states import LocationState
-
-from src.filters import DeviceCallback
-from src.filters import WeatherCallback
-
-from src.services import get_weather_now
-
+from src.core import get_logger
+from src.filters import DeviceCallback, WeatherCallback
 from src.keyboards import (
+    get_btns_device,
+    get_btns_location,
     get_btns_start,
     get_btns_weather,
     get_btns_weather_now,
-    get_btns_device,
-    get_btns_location,
 )
-from src.core import get_logger
-
+from src.services import get_city_from_cord, get_cord_from_city, get_weather_now
+from src.states import LocationState
+from src.utils import clear_state
 
 router = Router()
 _lg = get_logger()
@@ -74,15 +66,17 @@ async def weather_callback_handler(
 
         # 🌡 Сейчас
         elif callback_data.action == "weather_now":
-
             if user_repo.has_location(user.id):
                 location = user_repo.get_by_id(user.id)
+                latitude = location.get("latitude", None)
+                longitude = location.get("longitude", None)
                 city = location.get("city")
 
                 all_msg = await get_weather_now(
                     locale=locale,
-                    user_id=user.id,
                     city=city,
+                    latitude=latitude,
+                    longitude=longitude,
                     usr_loc=location,
                 )
 
@@ -199,7 +193,6 @@ async def device_callback_handler(
     locale: TranslatorRunner,
     state: FSMContext,
 ):
-
     # Проверяем, что сообщение доступно для редактирования
     if not isinstance(callback.message, Message):
         _lg.warning("Cannot edit inaccessible message.")
@@ -209,7 +202,6 @@ async def device_callback_handler(
     message: Message | None = callback.message
 
     if callback_data.action == "device_phone":
-
         # Установить состояние ожидания геолокации
         await state.set_state(LocationState.waiting_for_city_phone)
 
@@ -219,7 +211,6 @@ async def device_callback_handler(
         )
 
     if callback_data.action == "device_pc":
-
         # Установить состояние ожидания города
         await state.set_state(LocationState.waiting_for_city_pc)
 

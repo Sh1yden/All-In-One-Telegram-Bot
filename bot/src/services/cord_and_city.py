@@ -8,6 +8,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(bot_dir))
 
 import asyncio
+
 import aiohttp
 
 from src.core import get_logger, setup_logging

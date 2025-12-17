@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from pathlib import Path
 from typing import Any
@@ -10,9 +11,8 @@ if __name__ == "__main__":
 
 import aiohttp
 
-from src.utils import settings
 from src.core import get_logger, setup_logging
-
+from src.utils import settings
 
 setup_logging(level="DEBUG")
 _lg = get_logger(__name__)
@@ -36,9 +36,6 @@ async def get_raw_link_api(
     If api_name is None return all srv_and_links. \n
     """
     try:
-        if "VisualCrossing" in srv_and_links.keys():
-            srv_and_links["VisualCrossing"] += "key=" + settings.VISUAL_CROSSING_KEY
-
         _lg.debug(type(latitude))
         _lg.debug(type(longitude))
 

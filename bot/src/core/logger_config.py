@@ -1,9 +1,9 @@
-import logging
-import sys
-import os
 import inspect
-from pathlib import Path
+import logging
+import os
+import sys
 from datetime import datetime
+from pathlib import Path
 
 
 def setup_logging(

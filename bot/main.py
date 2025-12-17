@@ -1,33 +1,25 @@
 import asyncio
+import logging
 
-from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiogram.fsm.storage.memory import MemoryStorage
-
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiohttp import web
 from fluent_compiler.bundle import FluentBundle
-from fluentogram import TranslatorHub, FluentTranslator
+from fluentogram import FluentTranslator, TranslatorHub
 from fluentogram.exceptions import (
-    KeyNotFoundError,
     FormatError,
+    KeyNotFoundError,
     RootTranslatorNotFoundError,
 )
-
-from src.middlewares.middlewares import TranslateMiddleware, DataBaseMiddleware
-from src.handlers import router as main_router
-
-from src.utils import (
-    settings,
-    start_tuna,
-)
+from src.core import get_logger, setup_logging
 from src.database.core import SessionLocal
 from src.database.repositories.factory import create_repositories
-
-import logging
-from src.core import get_logger, setup_logging
-
+from src.handlers import router as main_router
+from src.middlewares.middlewares import DataBaseMiddleware, TranslateMiddleware
+from src.utils import settings, start_tuna
 
 storage = MemoryStorage()
 
@@ -268,7 +260,7 @@ async def run_bot() -> None:
         # Stop Tuna tunnel
         if tuna_process:
             try:
-                _lg.info("Stopping Tuna tunnel...")
+                _lg.debug("Stopping Tuna tunnel...")
                 tuna_process.terminate()
                 tuna_process.wait(timeout=3)
                 _lg.info("Tuna tunnel stopped.")

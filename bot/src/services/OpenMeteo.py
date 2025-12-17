@@ -11,10 +11,9 @@ import asyncio
 
 from fluentogram import TranslatorRunner
 
-from src.services import get_cord_from_city
 from src.core import get_logger, setup_logging
+from src.services import get_cord_from_city
 from src.utils import get_raw_link_api, req_data
-
 
 setup_logging(level="DEBUG")
 _lg = get_logger(__name__)
@@ -67,9 +66,10 @@ async def opm_get_weather_now(
 
         if locale is None:
             ERROR = "❌ Ошибка: не удалось получить данные от сервиса."  # ! Для теста
-        ERROR = (
-            locale.message_service_error_not_found_in_service()
-        )  # ! Для теста без locale, locale=None
+        else:
+            ERROR = (
+                locale.message_service_error_not_found_in_service()
+            )  # ! Для теста без locale, locale=None
 
         current_values = req_res.get("current", ERROR)
         current_units = req_res.get("current_units", ERROR)
@@ -80,12 +80,12 @@ async def opm_get_weather_now(
         time = raw_time[11:]
         is_day = bool(current_values.get("is_day", ERROR))
         feels_like = round(current_values.get("apparent_temperature", ERROR))
-        temp = current_values.get("temperature_2m", ERROR)
+        temp = round(current_values.get("temperature_2m", ERROR))
         temp_unit = current_units.get("temperature_2m", ERROR)
-        wind = current_values.get("wind_speed_10m", ERROR)
+        wind = round(current_values.get("wind_speed_10m", ERROR))
         wind_unit = current_units.get("wind_speed_10m", ERROR)
         weather_code = current_values.get("weather_code", ERROR)
-        humidity = current_values.get("relative_humidity_2m", ERROR)
+        humidity = round(current_values.get("relative_humidity_2m", ERROR))
         humidity_unit = current_units.get("relative_humidity_2m", ERROR)
 
         _lg.debug(f"Req_res is - {req_res}.")

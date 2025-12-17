@@ -1,19 +1,18 @@
+from typing import Any, Dict
+
 from aiogram import Router, html
 from aiogram.filters import Command
 from aiogram.types import Message, User
 from fluentogram import TranslatorRunner
 
-from typing import Dict, Any
-
+from src.core import get_logger
 from src.keyboards import (
+    get_btns_device,
     get_btns_start,
     get_btns_weather,
     get_btns_weather_now,
-    get_btns_device,
 )
-
-from src.core import get_logger
-
+from src.services import get_weather_now
 
 router = Router()
 _lg = get_logger()
@@ -22,7 +21,9 @@ _lg = get_logger()
 # обработка команды /start
 @router.message(Command("start"))
 async def command_start_handler(
-    message: Message, locale: TranslatorRunner, repos: Dict[str, Any]
+    message: Message,
+    locale: TranslatorRunner,
+    repos: Dict[str, Any],
 ) -> None:
     """Handle /start command and display welcome message"""
     try:
@@ -59,7 +60,7 @@ async def command_start_handler(
 # обработка команды /help
 @router.message(Command("help"))
 async def command_help_handler(message: Message, locale: TranslatorRunner):
-
+    """Handle /help command"""
     await message.answer(
         text=locale.message_help(),
         reply_markup=None,
@@ -69,11 +70,18 @@ async def command_help_handler(message: Message, locale: TranslatorRunner):
 # обработка команды /weatherMenu
 @router.message(Command("weatherMenu"))
 async def command_weather_handler(
-    message: Message, locale: TranslatorRunner, repos: Dict[str, Any]
+    message: Message,
+    locale: TranslatorRunner,
+    repos: Dict[str, Any],
 ) -> None:
-
+    """Handle /weatherMenu command"""
     user: User | None = message.from_user
     user_repo = repos["user_repo"]
+
+    if user is None:
+        _lg.warning("User is None")
+        await message.answer(locale.message_service_error_not_user_enable())
+        return
 
     await message.answer(
         text=locale.message_weather_menu(),
@@ -85,36 +93,88 @@ async def command_weather_handler(
 
 # обработка команды /weatherNow
 @router.message(Command("weatherNow"))
-async def command_weather_now_handler(message: Message, locale: TranslatorRunner):
-
+async def command_weather_now_handler(
+    message: Message,
+    locale: TranslatorRunner,
+    repos: Dict[str, Any],
+):
+    """Handle /weatherNow command"""
     user: User | None = message.from_user
+    user_repo = repos["user_repo"]
 
-    # TODO сделать ответ на команду
+    if user is None:
+        _lg.warning("User is None")
+        await message.answer(locale.message_service_error_not_user_enable())
+        return
 
-    await message.answer(
-        text="Заглушка при открытии через команду",  # ! заглушка
-        reply_markup=get_btns_weather_now(locale),
-    )
+    if user_repo.has_location(user.id):
+        location = user_repo.get_by_id(user.id)
+        latitude = location.get("latitude", None)
+        longitude = location.get("longitude", None)
+        city = location.get("city")
+
+        all_msg = await get_weather_now(
+            locale=locale,
+            city=city,
+            latitude=latitude,
+            longitude=longitude,
+            usr_loc=location,
+        )
+
+        _lg.debug(f"all_msg is - {all_msg}")
+
+        await message.answer(
+            text=str(all_msg), reply_markup=get_btns_weather_now(locale)
+        )
+    else:
+        await message.answer(
+            text=locale.message_location_not_posted(),
+            reply_markup=get_btns_weather_now(locale),
+        )
 
 
 # обработка команды /location
 @router.message(Command("location"))
-async def request_location(message: Message, locale: TranslatorRunner) -> None:
+async def request_location(
+    message: Message,
+    locale: TranslatorRunner,
+    repos: Dict[str, Any],
+) -> None:
     """Handle /location command"""
     user: User | None = message.from_user
+    user_repo = repos["user_repo"]
 
     if user is None:
-        _lg.warning("User is None in request_location")
+        _lg.warning("User is None")
         await message.answer(locale.message_service_error_not_user_enable())
         return
 
-    # TODO await _check_and_display_location(message, user.id)
+    if user_repo.has_location(user.id):
+        location = user_repo.get_by_id(user.id)
+
+        city = location.get("city")
+        latitude = location.get("latitude")
+        longitude = location.get("longitude")
+
+        await message.answer(
+            text=locale.message_location_good_send(
+                city=city,
+                latitude=latitude,
+                longitude=longitude,
+            ),
+            reply_markup=get_btns_weather_now(locale),
+        )
+    else:
+        await message.answer(
+            text=locale.message_device_select(),
+            reply_markup=get_btns_device(locale),
+        )
 
 
 # обработка команды /device
 @router.message(Command("device"))
 async def command_device_handler(message: Message, locale: TranslatorRunner):
-
+    """Handle /device command"""
     await message.answer(
         text=locale.message_device_select(),
         reply_markup=get_btns_device(locale),

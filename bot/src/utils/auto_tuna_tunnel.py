@@ -8,7 +8,6 @@ _lg = get_logger()
 
 
 def start_tuna(port: int) -> Tuple[str, subprocess.Popen]:
-
     process = subprocess.Popen(
         ["tuna", "http", str(port), "--log-format", "json", "--log", "stdout"],
         stdout=subprocess.PIPE,

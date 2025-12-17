@@ -3,13 +3,11 @@
 from typing import Any, Awaitable, Callable, Dict
 
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject, User, Update
+from aiogram.types import TelegramObject, Update, User
+from cachetools import TTLCache
 from fluentogram import TranslatorHub
 
-from cachetools import TTLCache
-
 from src.core import get_logger
-
 
 caches = {"default": TTLCache(maxsize=10_000, ttl=0.1)}
 _lg = get_logger()

@@ -11,15 +11,18 @@ import asyncio
 
 from fluentogram import TranslatorRunner
 
-from src.services import (
-    get_cord_from_city,
-    get_city_from_cord,
-    opm_get_weather_now,
-)
 from src.core import get_logger, setup_logging
+from src.services import (
+    get_city_from_cord,
+    get_cord_from_city,
+    opm_get_weather_now,
+    vsc_get_weather_now,
+)
 
 setup_logging(level="DEBUG")
 _lg = get_logger()
+
+# TODO когда то сделать переключение с м/с на км/ч и тд
 
 
 async def agrregated_weather(
@@ -41,7 +44,11 @@ async def agrregated_weather(
                 if data and not isinstance(data, Exception):
                     sources.append(api_name)
                     for key, value in data.items():
-                        if key not in aggregated and value not in [None, "ERROR"]:
+                        if key not in aggregated and value not in [
+                            None,
+                            "ERROR",
+                            "❌ Ошибка: не удалось получить данные от сервиса.",
+                        ]:
                             aggregated[key] = value
 
         return aggregated, sources
@@ -77,6 +84,7 @@ async def avg_and_filtered_temp(sources, results: dict) -> tuple[int, int] | Non
 
 
 async def decode_weather_code(locale: TranslatorRunner, code: int) -> str:
+    # TODO i18n добавить
     WEATHER_CODES = {
         404: locale.message_service_error_not_found_in_service(),
         0: "Ясно",
@@ -108,7 +116,7 @@ async def decode_weather_code(locale: TranslatorRunner, code: int) -> str:
         96: "Гроза с градом",
         99: "Гроза сильная с градом",
     }
-    return WEATHER_CODES.get(code, f"Код {code}")
+    return WEATHER_CODES.get(code, f"{code}")
 
 
 async def connect_templates(
@@ -148,9 +156,9 @@ async def connect_templates(
                     wind_unit=wind_unit,
                 )
                 + "\n"
-            )
+            ) + "\n"
 
-            return sources_text
+        return sources_text
 
     except Exception as e:
         _lg.error(f"Internal error: {e}")
@@ -158,7 +166,6 @@ async def connect_templates(
 
 async def get_weather_now(
     locale: TranslatorRunner,
-    user_id: int,
     city: str | None = None,
     latitude: str | float | None = None,
     longitude: str | float | None = None,
@@ -183,10 +190,13 @@ async def get_weather_now(
             _lg.error(f"Latitude: {latitude}, and Longitude: {longitude}. Error!")
             return None
 
-        # ! TEST
-
         results = {}
         results["OpenMeteo"] = await opm_get_weather_now(
+            locale=locale,
+            latitude=latitude,
+            longitude=longitude,
+        )
+        results["VisualCrossing"] = await vsc_get_weather_now(
             locale=locale,
             latitude=latitude,
             longitude=longitude,
