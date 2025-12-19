@@ -17,6 +17,7 @@ from src.services import (
     get_cord_from_city,
     opm_get_weather_now,
     vsc_get_weather_now,
+    wapi_get_weather_now,
 )
 
 setup_logging(level="DEBUG")
@@ -29,8 +30,8 @@ async def agrregated_weather(
     results: dict,
     priority_order: list[str] = [
         "OpenMeteo",
-        "VisualCrossing",
         "WeatherAPI",
+        "VisualCrossing",
         "Yandex",
     ],
 ) -> tuple[dict, list] | None:
@@ -191,16 +192,28 @@ async def get_weather_now(
             return None
 
         results = {}
+        # ! Расположены в порядке сортировки
+        # OpenMeteo
         results["OpenMeteo"] = await opm_get_weather_now(
             locale=locale,
             latitude=latitude,
             longitude=longitude,
         )
+
+        # WeatherAPI
+        results["WeatherAPI"] = await wapi_get_weather_now(
+            locale=locale,
+            latitude=latitude,
+            longitude=longitude,
+        )
+
+        # VisualCrossing
         results["VisualCrossing"] = await vsc_get_weather_now(
             locale=locale,
             latitude=latitude,
             longitude=longitude,
         )
+
         # TODO добавить другие сервисы так же как сверху
 
         aggregated, sources = await agrregated_weather(results=results)
