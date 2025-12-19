@@ -11,7 +11,7 @@ import asyncio
 
 from fluentogram import TranslatorRunner
 
-from src.core import get_logger, setup_logging
+from src.core import get_logger
 from src.services import (
     get_city_from_cord,
     get_cord_from_city,
@@ -20,7 +20,6 @@ from src.services import (
     wapi_get_weather_now,
 )
 
-setup_logging(level="DEBUG")
 _lg = get_logger()
 
 # TODO когда то сделать переключение с м/с на км/ч и тд
@@ -302,6 +301,8 @@ async def get_weather_wind_pressure() -> None:
 if __name__ == "__main__":
 
     async def main():
-        pass
+        from src.core import setup_logging
+
+        setup_logging(level="DEBUG")
 
     asyncio.run(main())

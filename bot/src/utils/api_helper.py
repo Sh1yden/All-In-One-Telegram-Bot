@@ -11,10 +11,8 @@ if __name__ == "__main__":
 
 import aiohttp
 
-from src.core import get_logger, setup_logging
-from src.utils import settings
+from src.core import get_logger
 
-setup_logging(level="DEBUG")
 _lg = get_logger(__name__)
 
 
@@ -92,6 +90,10 @@ if __name__ == "__main__":
     import asyncio
 
     async def main():
+        from src.core import setup_logging
+
+        setup_logging(level="DEBUG")
+
         # 1 get_raw_link_api
         result1 = await get_raw_link_api(
             latitude=51.2222,

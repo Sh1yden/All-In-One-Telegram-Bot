@@ -11,11 +11,10 @@ import asyncio
 
 from fluentogram import TranslatorRunner
 
-from src.core import get_logger, setup_logging
+from src.core import get_logger
 from src.services import get_cord_from_city
 from src.utils import get_raw_link_api, req_data
 
-setup_logging(level="DEBUG")
 _lg = get_logger(__name__)
 
 
@@ -125,6 +124,8 @@ async def opm_get_weather_now(
 if __name__ == "__main__":
 
     async def main():
+        setup_logging(level="DEBUG")
+
         latitude = 51.73733
         longitude = 36.18735
 

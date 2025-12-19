@@ -11,10 +11,9 @@ import asyncio
 
 import aiohttp
 
-from src.core import get_logger, setup_logging
+from src.core import get_logger
 from src.utils import get_raw_link_api, req_data
 
-setup_logging(level="DEBUG")
 _lg = get_logger(__name__)
 
 
@@ -137,6 +136,9 @@ async def get_cord_from_city(name_city: str | None) -> dict[str, str] | None:
 if __name__ == "__main__":
 
     async def main():
+        from src.core import setup_logging
+
+        setup_logging(level="DEBUG")
 
         # NominatimAPI
         lat, lon = 51.705684, 36.164215  # Kursk coordinates
