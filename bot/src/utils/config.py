@@ -16,6 +16,8 @@ class SettingsSchema(BaseSettings):
     VISUAL_CROSSING_KEY: str
     # WeatherAPI
     WEATHER_API_KEY: str
+    # OpenWeatherMap
+    OPEN_WEATHER_MAP_API_KEY: str
 
     # Pydantic settings
     model_config = SettingsConfigDict(env_file=".env", extra="allow")

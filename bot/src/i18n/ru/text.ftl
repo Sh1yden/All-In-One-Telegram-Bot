@@ -56,6 +56,99 @@ message_weather_now_summary_template =
         💧 Влажность: { $humidity }{ $humidity_unit }
         🌬️ Ветер: { $wind }{ $wind_unit }
 
+# ? Weather Codes
+# ? Weather Codes WMO
+message_weather_code_0 = Ясно
+message_weather_code_1 = Преимущественно ясно
+message_weather_code_2 = Переменная облачность
+message_weather_code_3 = Пасмурно
+message_weather_code_45 = Туман
+message_weather_code_48 = Инейный туман
+message_weather_code_51 = Морось слабая
+message_weather_code_53 = Морось умеренная
+message_weather_code_55 = Морось сильная
+message_weather_code_56 = Ледяная морось слабая
+message_weather_code_57 = Ледяная морось сильная
+message_weather_code_61 = Дождь слабый
+message_weather_code_63 = Дождь умеренный
+message_weather_code_65 = Дождь сильный
+message_weather_code_66 = Ледяной дождь слабый
+message_weather_code_67 = Ледяной дождь сильный
+message_weather_code_71 = Снег слабый
+message_weather_code_73 = Снег умеренный
+message_weather_code_75 = Снег сильный
+message_weather_code_77 = Снежные зерна
+message_weather_code_80 = Ливень слабый
+message_weather_code_81 = Ливень умеренный
+message_weather_code_82 = Ливень сильный
+message_weather_code_85 = Снежный ливень слабый
+message_weather_code_86 = Снежный ливень сильный
+message_weather_code_95 = Гроза слабая
+message_weather_code_96 = Гроза с градом
+message_weather_code_99 = Гроза сильная с градом
+
+# ? Weather Codes WeatherAPI
+message_weather_code_1000 = Солнечно
+message_weather_code_1003 = Местами облачно
+message_weather_code_1006 = Облачно
+message_weather_code_1009 = Пасмурно
+message_weather_code_1030 = Туман
+message_weather_code_1063 = Местами возможен дождь
+message_weather_code_1066 = Местами возможен снег
+message_weather_code_1069 = Местами возможна ледяная крупа
+message_weather_code_1087 = Возможны грозовые вспышки
+message_weather_code_1114 = Метель
+message_weather_code_1117 = Снежная буря
+message_weather_code_1135 = Туман
+message_weather_code_1147 = Замерзающий туман
+message_weather_code_1150 = Местами слабая морось
+message_weather_code_1153 = Слабая морось
+message_weather_code_1168 = Замерзающая морось
+message_weather_code_1171 = Сильная замерзающая морось
+message_weather_code_1180 = Местами слабый дождь
+message_weather_code_1183 = Слабый дождь
+message_weather_code_1186 = Умеренный дождь
+message_weather_code_1189 = Сильный дождь
+message_weather_code_1192 = Слабый дождь с туманом
+message_weather_code_1195 = Умеренный или сильный дождь
+message_weather_code_1198 = Слабый ледяной дождь
+message_weather_code_1201 = Умеренный или сильный ледяной дождь
+message_weather_code_1204 = Слабая ледяная крупа
+message_weather_code_1207 = Умеренная или сильная ледяная крупа
+message_weather_code_1210 = Местами слабый снег
+message_weather_code_1213 = Слабый снег
+message_weather_code_1216 = Местами умеренный снег
+message_weather_code_1219 = Умеренный снег
+message_weather_code_1222 = Местами сильный снег
+message_weather_code_1225 = Сильный снег
+message_weather_code_1237 = Ледяные гранулы
+message_weather_code_1240 = Слабый дождевой ливень
+message_weather_code_1243 = Умеренный или сильный дождевой ливень
+message_weather_code_1246 = Проливной дождевой ливень
+message_weather_code_1249 = Слабый ливень ледяной крупы
+message_weather_code_1252 = Умеренный или сильный ливень ледяной крупы
+message_weather_code_1255 = Слабый снежный ливень
+message_weather_code_1258 = Умеренный или сильный снежный ливень
+message_weather_code_1261 = Слабый ливень ледяных гранул
+message_weather_code_1264 = Умеренный или сильный ливень ледяных гранул
+message_weather_code_1273 = Местами слабый дождь с грозой
+message_weather_code_1276 = Умеренный или сильный дождь с грозой
+message_weather_code_1279 = Местами слабый снег с грозой
+message_weather_code_1282 = Умеренный или сильный снег с грозой
+
+# ? Weather Codes VisualCrossing (текстовые описания)
+message_weather_code_clear = Ясно
+message_weather_code_partly_cloudy = Местами облачно
+message_weather_code_cloudy = Облачно
+message_weather_code_overcast = Пасмурно
+message_weather_code_fog = Туман
+message_weather_code_rain = Дождь
+message_weather_code_snow = Снег
+message_weather_code_thunderstorm = Гроза
+message_weather_code_mist = Мгла
+
+
+
 
 # ? Device Msgs
 message_device_select = ❓ Выберете свой девайс для определения местоположения.

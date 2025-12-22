@@ -18,6 +18,7 @@ from src.services import (
     opm_get_weather_now,
     vsc_get_weather_now,
     wapi_get_weather_now,
+    yan_get_weather_now,
 )
 
 _lg = get_logger()
@@ -28,10 +29,10 @@ _lg = get_logger()
 async def agrregated_weather(
     results: dict,
     priority_order: list[str] = [
+        "YandexParser",
         "OpenMeteo",
         "WeatherAPI",
         "VisualCrossing",
-        "Yandex",
     ],
 ) -> tuple[dict, list] | None:
     """Aggregate by priority."""
@@ -192,6 +193,13 @@ async def get_weather_now(
 
         results = {}
         # ! Расположены в порядке сортировки
+        # YandexParser
+        results["YandexParser"] = await yan_get_weather_now(
+            locale=locale,
+            latitude=latitude,
+            longitude=longitude,
+        )
+
         # OpenMeteo
         results["OpenMeteo"] = await opm_get_weather_now(
             locale=locale,

@@ -19,7 +19,7 @@ _lg = get_logger(__name__)
 
 
 async def vsc_get_weather_now(
-    locale: TranslatorRunner | None,  # ! Закоментить для теста
+    locale: TranslatorRunner | None,
     city: str | None = None,
     latitude: str | float | None = None,
     longitude: str | float | None = None,

@@ -19,7 +19,7 @@ _lg = get_logger(__name__)
 
 
 async def opm_get_weather_now(
-    locale: TranslatorRunner | None,  # ! Закоментить для теста
+    locale: TranslatorRunner | None,
     city: str | None = None,
     latitude: str | float | None = None,
     longitude: str | float | None = None,
@@ -124,6 +124,8 @@ async def opm_get_weather_now(
 if __name__ == "__main__":
 
     async def main():
+        from src.core import setup_logging
+
         setup_logging(level="DEBUG")
 
         latitude = 51.73733
@@ -139,6 +141,6 @@ if __name__ == "__main__":
             "OpenMeteo": OpenMeteo_data,
         }
 
-        _lg.debug(f"All_data is - {all_data}")
+        _lg.debug(f"All_data is - {bool(all_data)}")
 
     asyncio.run(main())

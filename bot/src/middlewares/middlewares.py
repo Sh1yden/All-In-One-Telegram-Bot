@@ -57,9 +57,6 @@ class TranslateMiddleware(BaseMiddleware):
         return result
 
 
-# TODO Тут мб место под User middleware
-
-
 class DataBaseMiddleware(BaseMiddleware):  # pylint: disable=too-few-public-methods
     """Data base middleware."""
 
