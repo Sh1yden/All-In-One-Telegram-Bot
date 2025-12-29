@@ -272,6 +272,10 @@ python bot/src/utils/db_utils.py
 
 Для более подробного описания переходите на доску Trello по ссылке: https://trello.com/b/ZnRVtPRN/my-telegram-bot-all-in-one
 
+## История изменений
+
+Все изменения теперь документируются в [CHANGELOG.md](CHANGELOG.md).
+
 ## Вклад в проект
 
 Для участия в разработке:
