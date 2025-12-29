@@ -53,6 +53,7 @@ async def weather_callback_handler(
     message: Message | None = callback.message
     user: User | None = callback.from_user
     user_repo = repos["user_repo"]
+    weather_repo = repos["weather_repo"]
 
     try:
         # 📚 Вызов всего меню
@@ -74,6 +75,7 @@ async def weather_callback_handler(
 
                 all_msg = await get_weather_now(
                     locale=locale,
+                    weather_repo=weather_repo,
                     city=city,
                     latitude=latitude,
                     longitude=longitude,

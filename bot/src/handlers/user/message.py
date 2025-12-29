@@ -101,6 +101,7 @@ async def command_weather_now_handler(
     """Handle /weatherNow command"""
     user: User | None = message.from_user
     user_repo = repos["user_repo"]
+    weather_repo = repos["weather_repo"]
 
     if user is None:
         _lg.warning("User is None")
@@ -115,6 +116,7 @@ async def command_weather_now_handler(
 
         all_msg = await get_weather_now(
             locale=locale,
+            weather_repo=weather_repo,
             city=city,
             latitude=latitude,
             longitude=longitude,

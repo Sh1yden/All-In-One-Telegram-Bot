@@ -11,15 +11,10 @@ import asyncio
 
 import aiohttp
 from bs4 import BeautifulSoup
-from datetime import datetime
 
 from src.core import get_logger
-from src.utils import save_to_file, load_from_file
 
 _lg = get_logger(__name__)
-
-# TODO универсальные методы парсинга
-# TODO Сохранение кеша или файла из сайта
 
 
 async def parse_data(
@@ -40,20 +35,6 @@ async def parse_data(
         _lg.debug(f"Response is - {bool(await response.text())}")
 
         return await response.text()
-
-
-async def set_save_parse_data(city, datetime, response_html):
-    try:
-        pass
-    except Exception as e:
-        _lg.critical(f"Internal error: {e}")
-
-
-async def get_save_parse_data(file_name):
-    try:
-        pass
-    except Exception as e:
-        _lg.critical(f"Internal error: {e}")
 
 
 async def get_soup(response):

@@ -8,6 +8,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(bot_dir))
 
 import asyncio
+from datetime import datetime, timedelta
 
 from fluentogram import TranslatorRunner
 
@@ -167,6 +168,7 @@ async def connect_templates(
 
 async def get_weather_now(
     locale: TranslatorRunner,
+    weather_repo,
     city: str | None = None,
     latitude: str | float | None = None,
     longitude: str | float | None = None,
@@ -191,71 +193,97 @@ async def get_weather_now(
             _lg.error(f"Latitude: {latitude}, and Longitude: {longitude}. Error!")
             return None
 
-        results = {}
-        # ! Расположены в порядке сортировки
-        # YandexParser
-        results["YandexParser"] = await yan_get_weather_now(
-            locale=locale,
-            latitude=latitude,
-            longitude=longitude,
-        )
+        ymdhm = datetime.now().strftime("%Y%m%d%H")
+        WN_idex = "WN"
+        weather_id = f"{WN_idex}{city}{ymdhm}"
 
-        # OpenMeteo
-        results["OpenMeteo"] = await opm_get_weather_now(
-            locale=locale,
-            latitude=latitude,
-            longitude=longitude,
-        )
+        # Redis cache
+        if weather_repo.exists(weather_id):
+            weather_now_msg = weather_repo.get_by_id(weather_id)
+            return weather_now_msg["weather_now_msg"]
 
-        # WeatherAPI
-        results["WeatherAPI"] = await wapi_get_weather_now(
-            locale=locale,
-            latitude=latitude,
-            longitude=longitude,
-        )
+        else:
+            results = {}
+            # ! Расположены в порядке сортировки
+            # YandexParser
+            results["YandexParser"] = await yan_get_weather_now(
+                locale=locale,
+                latitude=latitude,
+                longitude=longitude,
+            )
 
-        # VisualCrossing
-        results["VisualCrossing"] = await vsc_get_weather_now(
-            locale=locale,
-            latitude=latitude,
-            longitude=longitude,
-        )
+            # OpenMeteo
+            results["OpenMeteo"] = await opm_get_weather_now(
+                locale=locale,
+                latitude=latitude,
+                longitude=longitude,
+            )
 
-        # TODO добавить другие сервисы так же как сверху
+            # WeatherAPI
+            results["WeatherAPI"] = await wapi_get_weather_now(
+                locale=locale,
+                latitude=latitude,
+                longitude=longitude,
+            )
 
-        aggregated, sources = await agrregated_weather(results=results)
+            # VisualCrossing
+            results["VisualCrossing"] = await vsc_get_weather_now(
+                locale=locale,
+                latitude=latitude,
+                longitude=longitude,
+            )
 
-        ERROR = locale.message_service_error_not_found_in_service()
+            # TODO осталось добавить google погоду и возможно open weather map
 
-        temp_unit = aggregated.get("temp_unit", ERROR)
-        avg_temp, avg_filtered = await avg_and_filtered_temp(
-            sources=sources, results=results
-        )
-        day_or_night_emoji = (
-            locale.emoji_weather_now_day()
-            if aggregated.get("is_day")
-            else locale.emoji_weather_now_night()
-        )
-        time = aggregated.get("time", ERROR)
+            aggregated, sources = await agrregated_weather(results=results)
 
-        header = locale.message_weather_now_header(
-            city=city,  # Из бд пользователя
-            time=time,
-            day_or_night_emoji=day_or_night_emoji,
-            avg_temp=avg_temp,
-            temp_unit=temp_unit,
-            avg_filtered=avg_filtered,
-        )
-        sources_text = await connect_templates(
-            locale=locale,
-            results=results,
-            sources=sources,
-            temp_unit=temp_unit,
-        )
+            ERROR = locale.message_service_error_not_found_in_service()
 
-        all_msg = header + "\n" + sources_text.strip()
+            temp_unit = aggregated.get("temp_unit", ERROR)
+            avg_temp, avg_filtered = await avg_and_filtered_temp(
+                sources=sources, results=results
+            )
+            day_or_night_emoji = (
+                locale.emoji_weather_now_day()
+                if aggregated.get("is_day")
+                else locale.emoji_weather_now_night()
+            )
+            time = aggregated.get("time", ERROR)
 
-        return all_msg
+            header = locale.message_weather_now_header(
+                city=city,  # Из бд пользователя
+                time=time,
+                day_or_night_emoji=day_or_night_emoji,
+                avg_temp=avg_temp,
+                temp_unit=temp_unit,
+                avg_filtered=avg_filtered,
+            )
+            sources_text = await connect_templates(
+                locale=locale,
+                results=results,
+                sources=sources,
+                temp_unit=temp_unit,
+            )
+
+            weather_now_msg = header + "\n" + sources_text.strip()
+
+            # Удаление старого кеша перед сохранением нового
+            current_hour = datetime.now().replace(minute=0, second=0, microsecond=0)
+            prev_hour = current_hour - timedelta(hours=1)
+            prev_ymdhm = prev_hour.strftime("%Y%m%d%H")
+            prev_weather_id = f"{WN_idex}{city}{prev_ymdhm}"
+
+            if weather_repo.exists(prev_weather_id):
+                weather_repo.delete(prev_weather_id)
+                _lg.debug(f"Deleted old weather cache: {prev_weather_id}")
+
+            # New Redis cache
+            weather_repo.save_from_weather_id(
+                weather_id=weather_id,
+                weather_now_msg=weather_now_msg,
+            )
+
+            return weather_now_msg
 
     except Exception as e:
         _lg.error(f"Internal error: {e}")

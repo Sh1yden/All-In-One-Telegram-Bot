@@ -87,6 +87,7 @@ class MethodsOfDatabase:
             self._lg.critical(f"Failed to create tables: {e}.", exc_info=True)
             return False
 
+    # ==== User Methods ====
     def create_one_user(
         self,
         model: Type[T],
@@ -603,6 +604,152 @@ class MethodsOfDatabase:
         except Exception as e:
             self._lg.error(f"Error getting user IDs: {e}.")
             return []
+        finally:
+            session.close()
+
+    # ==== Weather Methods ====
+    def create_weather_cache(
+        self,
+        model: Type[T],
+        weather_id,
+        **kwargs: Any,
+    ) -> tuple[bool, str]:
+        """"""
+        session = self._get_session()
+        try:
+            if weather_id:
+                existing = (
+                    session.query(model).filter(model.weather_id == weather_id).first()  # type: ignore
+                )
+
+                if existing:
+                    self._lg.debug(f"Weather {weather_id} already exists.")
+                    return False, f"Weather {weather_id} already exists."
+
+            # Подготовка данных из Weather_id объекта
+            data = {}
+            if weather_id is not None:
+                data = {
+                    "weather_id": weather_id,
+                }
+
+            # Добавляем/перезаписываем дополнительными параметрами
+            data.update(kwargs)
+
+            # Создание записи
+            new_weather_cache = model(**data)
+            session.add(new_weather_cache)
+            session.commit()
+            session.refresh(new_weather_cache)
+
+            # Redis cache
+            self.cache.set(key=weather_id, data=data)  # type: ignore
+
+            self._lg.debug(f"Weather created: {new_weather_cache.weather_id}.")  # type: ignore
+            return True, f"Weather {new_weather_cache.weather_id} created successfully."  # type: ignore
+
+        except Exception as e:
+            session.rollback()
+            self._lg.error(f"Failed to create weather cache: {e}.", exc_info=True)
+            return False, f"Error: {str(e)}."
+        finally:
+            session.close()
+
+    def delete_weather_cache_by_id(
+        self,
+        model: Type[T],
+        weather_id,
+    ) -> tuple[bool, str]:
+        """"""
+        session = self._get_session()
+        try:
+            weather_cache = (
+                session.query(model).filter(model.weather_id == weather_id).first()  # type: ignore
+            )
+
+            if weather_cache is None:
+                self._lg.warning(f"Weather {weather_id} not found for deletion.")
+                return False, f"Weather {weather_id} not found."
+
+            session.delete(weather_cache)
+            session.commit()
+
+            # Redis cache
+            self.cache.delete(key=weather_id)
+
+            self._lg.debug(f"Weather deleted: {weather_id}.")
+            return True, f"Weather {weather_id} deleted successfully."
+
+        except Exception as e:
+            session.rollback()
+            self._lg.error(
+                f"Failed to delete weather cache {weather_id}: {e}.", exc_info=True
+            )
+            return False, f"Error: {str(e)}"
+        finally:
+            session.close()
+
+    def find_weather_cache_by_id(
+        self,
+        model: Type[T],
+        weather_id: int,
+        as_dict: bool = True,
+    ) -> T | dict[str, Any] | None:
+        """"""
+        session = self._get_session()
+        try:
+            cached_data = self.cache.get(weather_id)
+
+            if cached_data:
+                return cached_data
+
+            else:
+                weather = (
+                    session.query(model).filter(model.weather_id == weather_id).first()  # type: ignore
+                )
+
+                if weather is None:
+                    self._lg.debug(f"Weather {weather_id} not found.")
+                    return None
+
+                if as_dict:
+                    # Преобразуем в словарь
+                    result = {
+                        column.name: getattr(weather, column.name)
+                        for column in model.__table__.columns
+                    }
+                    self._lg.debug(f"Weather {weather_id} found and returned as dict.")
+                    return result
+                else:
+                    # Отвязываем от сессии
+                    session.expunge(weather)
+                    self._lg.debug(
+                        f"Weather {weather_id} found and returned as object."
+                    )
+                    return weather
+
+        except Exception as e:
+            self._lg.error(f"Error finding weather {weather_id}: {e}.")
+            return None
+        finally:
+            session.close()
+
+    def weather_cache_exists(self, model: Type[T], weather_id: int) -> bool:
+        """"""
+        session = self._get_session()
+        try:
+            if self.cache.exists(weather_id):
+                return True
+            else:
+                # Используем EXISTS для оптимизации
+                stmt = select(exists().where(model.weather_id == weather_id))  # type: ignore
+                result = session.execute(stmt).scalar()
+
+                return bool(result)
+
+        except Exception as e:
+            self._lg.error(f"Error checking weather cache existence: {e}.")
+            return False
         finally:
             session.close()
 
