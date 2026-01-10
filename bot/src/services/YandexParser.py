@@ -130,15 +130,13 @@ async def yan_get_weather_now(
         hourly_w = [i.text for i in scroll_content]
         time = hourly_w[0][:5]
         is_day = await _get_is_day(hourly_w, ERROR, int(time[:2]))
-        feels_like = soup.find(
-            "span", class_="AppFact_feels__IJoel AppFact_feels_withYesterday__yE440"
-        ).text[-3:-1]
+        feels_like = soup.find("span", class_="AppFact_feels__base__bw86b").text[-4:-1]
         temp = soup.find("p", class_="AppFactTemperature_content__Lx4p9").text[:-1]
         temp_unit = soup.find("p", class_="AppFactTemperature_content__Lx4p9").text[-1:]
         raw_wphc = soup.find_all("li", class_="AppFact_details__item__QFIXI")
         wphc_list = [i.text for i in raw_wphc]
-        raw_wind = wphc_list[0].split(",")
-        wind = round(float(raw_wind[0][:-3].strip()))
+        raw_wind = wphc_list[0].rsplit(",", maxsplit=1)
+        wind = str(round(float(raw_wind[0][:-3].replace(",", "."))))
         wind_unit = raw_wind[0][-3:].strip()
         weather_code = soup.find("p", class_="AppFact_warning__8kUUn").text
         humidity = wphc_list[2][:-1]

@@ -11,38 +11,38 @@ class WeatherRepository(BaseRepository[WeatherAllInfo]):
     def __init__(self, db_methods: MethodsOfDatabase):
         super().__init__(db_methods, WeatherAllInfo)
 
-    def get_by_id(self, entity_id: int) -> Dict[str, Any] | None:
+    async def get_by_id(self, entity_id: str) -> Dict[str, Any] | None:
         """Get weather cache by ID."""
-        return self.db_methods.find_weather_cache_by_id(
+        return await self.db_methods.find_weather_cache_by_id(
             model=self.model, weather_id=entity_id, as_dict=True
         )
 
-    def save(self, entity_data: Dict[str, Any]) -> bool:
+    async def save(self, entity_data: Dict[str, Any]) -> bool:
         """Save new weather cache."""
-        success, _ = self.db_methods.create_weather_cache(
+        success, _ = await self.db_methods.create_weather_cache(
             model=self.model, **entity_data
         )
         return success
 
-    def save_from_weather_id(self, weather_id, **kwargs: Any) -> bool:
+    async def save_from_weather_id(self, weather_id, **kwargs: Any) -> bool:
         """Save new weather cache from weather_id."""
-        success, _ = self.db_methods.create_weather_cache(
+        success, _ = await self.db_methods.create_weather_cache(
             model=self.model, weather_id=weather_id, **kwargs
         )
         return success
 
-    def update(self, entity_id: Any, updates: Dict[str, Any]) -> bool:
-        return super().update(entity_id, updates)
+    async def update(self, entity_id: Any, updates: Dict[str, Any]) -> bool:
+        return await super().update(entity_id, updates)
 
-    def delete(self, entity_id: int) -> bool:
+    async def delete(self, entity_id: str) -> bool:
         """Delete weather cache."""
-        success, _ = self.db_methods.delete_weather_cache_by_id(
+        success, _ = await self.db_methods.delete_weather_cache_by_id(
             model=self.model, weather_id=entity_id
         )
         return success
 
-    def exists(self, entity_id: int) -> bool:
+    async def exists(self, entity_id: str) -> bool:
         """Check if weather cache exists."""
-        return self.db_methods.weather_cache_exists(
+        return await self.db_methods.weather_cache_exists(
             model=self.model, weather_id=entity_id
         )

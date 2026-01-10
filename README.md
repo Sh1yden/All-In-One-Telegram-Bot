@@ -6,12 +6,13 @@ Telegram-бот с функционалом погоды и системой в�
 
 Многофункциональный Telegram-бот, реализующий следующие возможности:
 
--   **Погода**: Агрегация данных о погоде из нескольких источников (OpenMeteo, WeatherAPI, VisualCrossing, Яндекс.Погода)
--   **Вебхуки**: Работа через webhook с использованием Tuna туннелей
--   **База данных**: SQLAlchemy ORM с поддержкой SQLite и PostgreSQL
--   **Кэширование**: Redis для оптимизации запросов
--   **Интернационализация**: Fluentogram для поддержки нескольких языков
--   **Логирование**: Структурированное логирование в JSON и консоль
+-   **Погода**: Агрегация данных о погоде из нескольких источников (OpenMeteo, WeatherAPI, VisualCrossing, Яндекс.Погода).
+-   **Вебхуки**: Работа через webhook с использованием Tuna туннелей.
+-   **База данных**: SQLAlchemy ORM с поддержкой SQLite и PostgreSQL.
+-   **Контейнеризация в Docker**: проект полностью можно завернуть в контейнере docker с помощью файлов `Dockerfile` и `docker-compose.yml`. Подробнее ниже в пункте: [Docker установка](###docker-установка).
+-   **Кэширование**: Redis для оптимизации запросов.
+-   **Интернационализация**: Fluentogram для поддержки нескольких языков.
+-   **Логирование**: Структурированное логирование в JSON и консоль.
 
 ## Архитектура
 
@@ -35,10 +36,10 @@ bot/
 
 ### Паттерны проектирования
 
--   **Repository Pattern**: Абстракция работы с БД
--   **Factory Pattern**: Создание репозиториев и заголовков
--   **Middleware Pattern**: Обработка переводов и инъекция зависимостей
--   **FSM Pattern**: Управление состояниями диалога
+-   **Repository Pattern**: Абстракция работы с БД.
+-   **Factory Pattern**: Создание репозиториев и заголовков.
+-   **Middleware Pattern**: Обработка переводов и инъекция зависимостей.
+-   **FSM Pattern**: Управление состояниями диалога.
 
 ## Требования
 
@@ -55,7 +56,7 @@ bot/
 1. Клонируйте репозиторий:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Sh1yden/All-In-One-Telegram-Bot.git
 cd All-In-One-Telegram-Bot
 ```
 
@@ -70,56 +71,64 @@ venv\Scripts\activate     # Windows
 3. Установите зависимости:
 
 ```bash
-pip install -r bot/requirements.txt
+pip install -r requirements.txt
 ```
 
 4. Создайте файл `.env` в корне проекта:
 
 ```env
-# Telegram
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_WEBHOOK_SECRET=your_webhook_secret
+# TELEGRAM
+TELEGRAM_BOT_TOKEN=your_token
+# TG WEBHOOK
+TELEGRAM_WEBHOOK_SECRET=your-secret
 
-# Tuna Tunnels
-TUNA_TOKEN=your_tuna_token
-TUNA_API_TOKEN=your_tuna_api_token
+# TUNA TUNNELS
+TUNA_TOKEN=your_token
+TUNA_API_TOKEN=your_token
 
-# Database
-DATABASE_STATUS=development  # или product
-SQLITE_DB_URL=sqlite:///./bot/src/database/database files/sqlite/
-PG_USERNAME=your_pg_username
-PG_PASSWORD=your_pg_password
-PG_HOST=your_pg_host
-PG_PORT=5432
-PG_DB_NAME=your_db_name
-PG_DB_ROOT_NAME=postgres
+# DATABASES
+DATABASE_STATUS=product # product or development
 
-# Weather Services
-VISUAL_CROSSING_KEY=your_visual_crossing_key
-WEATHER_API_KEY=your_weather_api_key
-OPEN_WEATHER_MAP_API_KEY=your_openweather_key
+# SQLITE
+SQLITE_DB_URL=sqlite+aiosqlite:///bot/src/database/database files/sqlite/dev.db
+
+# PGSQL
+POSTGRES_HOST=posgresql # posgresql or localhost
+POSTGRES_ASYNCPG=asyncpg
+POSTGRES_DB=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_PORT=6432 # 5432 or 6432
+
+# REDIS
+REDIS_HOST=redis # redis or localhost
+REDIS_PORT=6379
+
+# SERVICES
+# VisualCrossing
+VISUAL_CROSSING_KEY=your_key
+# WeatherAPI
+WEATHER_API_KEY=your_key
+# OpenWeatherMap
+OPEN_WEATHER_MAP_API_KEY=your_key
 ```
 
 5. Запустите бота:
 
+Обязательно из коневой папки проекта как приведено ниже, иначе будет проблема с импортами и пакетами.
+
 ```bash
-python main.py
+python bot/main.py
 ```
 
 ### Docker установка
 
 1. Убедитесь, что файл `.env` создан
 
-2. Запустите через Docker Compose:
+2. Создание образа и запуск в docker:
 
 ```bash
-docker-compose up -d
-```
-
-3. Просмотр логов:
-
-```bash
-docker-compose logs -f bot
+docker compose -f 'docker-compose.yml' up -d --build
 ```
 
 ## Основные команды бота
@@ -166,9 +175,11 @@ location_exists = user_repo.has_location(user_id)
 3. **WeatherAPI** - Коммерческий API
 4. **VisualCrossing** - Расширенные данные
 
+В возможном будущем будет **GoogleParser** и **OpenWeatherMap**.
+
 ### Приоритет источников
 
-Система использует приоритетную агрегацию: данные берутся из первого доступного источника в порядке приоритета, с фильтрацией ошибочных значений.
+Система использует приоритетную агрегацию: данные берутся из первого доступного источника в порядке приоритета, с фильтрацией ошибочных значений. Приоритет можно настроить.
 
 ## Кэширование
 
@@ -239,6 +250,7 @@ python bot/src/utils/db_utils.py
 -   Пакетные операции с БД
 -   Redis кэширование
 -   Асинхронные HTTP-запросы
+-   Асинхронная бд и кеш
 -   Connection pooling для БД
 
 ### Мониторинг
@@ -293,3 +305,5 @@ python bot/src/utils/db_utils.py
 ## Контакты
 
 Для вопросов и предложений создавайте Issues в репозитории или же пишите в телеграмм который указан в профиле.
+
+PS Любой помощи или совету буду очень благодарен.

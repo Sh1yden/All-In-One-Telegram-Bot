@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean
 
 from src.database.core.database import Base
 
@@ -31,7 +31,7 @@ class UserAllInfo(Base):
         nullable=False,  # NOT NULL
     )
 
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     is_bot = Column(Boolean, nullable=False)
     is_premium = Column(Boolean)
     language_code = Column(String)
@@ -43,8 +43,8 @@ class UserAllInfo(Base):
 
     device_type = Column(String)
     city = Column(String)
-    latitude = Column(Float)
-    longitude = Column(Float)
+    latitude = Column(String)
+    longitude = Column(String)
 
     def __repr__(self):
         return f"<User(user_id={self.user_id}, first_name='{self.first_name})'>"

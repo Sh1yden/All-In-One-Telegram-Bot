@@ -7,7 +7,7 @@ from src.database.repositories import UserRepository
 from src.filters import WeatherCallback
 
 
-def get_btns_weather(
+async def get_btns_weather(
     user_id: int,
     locale: TranslatorRunner,
     user_repo: UserRepository,
@@ -57,7 +57,7 @@ def get_btns_weather(
     )
 
     # 📍 Локация:
-    user_data = user_repo.get_by_id(user_id)
+    user_data = await user_repo.get_by_id(user_id)
     city = user_data.get("city", "Ваша локация") if user_data else "Ваша локация"
     builder.row(
         InlineKeyboardButton(

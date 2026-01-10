@@ -11,11 +11,12 @@ from typing import Type, Any, TypeVar
 
 from aiogram.types import User
 
-from sqlalchemy import Engine, inspect, exists, select, func
-from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
+from sqlalchemy import inspect, exists, select, func
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
 from src.core import get_logger
-from src.utils.cache import RedisCache
+from src.utils import RedisCache
 
 # TypeVar для generic типизации
 T = TypeVar("T", bound=DeclarativeBase)
@@ -26,9 +27,9 @@ class MethodsOfDatabase:
 
     def __init__(
         self,
-        session_factory: sessionmaker,
+        session_factory: async_sessionmaker[AsyncSession],
         base: Type[DeclarativeBase],
-        engine: Engine | None,
+        engine: AsyncEngine | None,
     ):
         """
         Initialize database methods
@@ -48,11 +49,9 @@ class MethodsOfDatabase:
         self.session_factory = session_factory
         self.base = base
         self.engine = engine
-        self.cache = RedisCache()
+        self.cache = RedisCache()  # Создаём, но не подключаемся
 
-        self.create_tables_and_database()
-
-    def _get_session(self) -> Session:
+    def _get_session(self) -> AsyncSession:
         """
         Create new database session
 
@@ -61,34 +60,50 @@ class MethodsOfDatabase:
         """
         return self.session_factory()
 
-    def create_tables_and_database(self) -> bool:
+    async def create_tables_and_database(self) -> bool:
         """Create all database tables if they don't exist"""
+        async with self.engine.begin() as conn:
+            try:
+                from src.database.models import UserAllInfo, WeatherAllInfo  # noqa: F401 # нужно для правильного создания таблиц
+
+                def get_existing_tables(sync_conn):
+                    return inspect(sync_conn).get_table_names()
+
+                def create_all_tables(sync_conn):
+                    return self.base.metadata.create_all(sync_conn)
+
+                existing_tables = await conn.run_sync(get_existing_tables)
+
+                if existing_tables:
+                    self._lg.debug(f"Found existing tables: {existing_tables}.")
+                else:
+                    self._lg.debug("No existing tables found, creating...")
+
+                # Создаём таблицы
+                await conn.run_sync(create_all_tables)
+
+                # Проверяем
+                new_tables = await conn.run_sync(get_existing_tables)
+                self._lg.debug(f"Database tables ready: {new_tables}.")
+
+                return True
+
+            except Exception as e:
+                self._lg.critical(f"Failed to create tables: {e}.", exc_info=True)
+                return False
+
+    async def initialize_cache(self) -> None:
+        """Initialize Redis cache connection."""
         try:
-            from src.database.models import UserAllInfo  # noqa: F401
-
-            inspector = inspect(self.engine)
-            existing_tables = inspector.get_table_names()
-
-            if existing_tables:
-                self._lg.debug(f"Found existing tables: {existing_tables}.")
-            else:
-                self._lg.debug("No existing tables found, creating...")
-
-            # Создаём таблицы
-            self.base.metadata.create_all(self.engine)
-
-            # Проверяем
-            new_tables = inspector.get_table_names()
-            self._lg.debug(f"Database tables ready: {new_tables}.")
-
-            return True
-
+            await self.cache.connect()  # type: ignore
+            self._lg.info("Redis cache initialized")
         except Exception as e:
-            self._lg.critical(f"Failed to create tables: {e}.", exc_info=True)
-            return False
+            self._lg.error(f"Failed to initialize Redis cache: {e}")
+            # Можно продолжить без кэша
+            self.cache = None
 
     # ==== User Methods ====
-    def create_one_user(
+    async def create_one_user(
         self,
         model: Type[T],
         user: User | None = None,
@@ -106,63 +121,63 @@ class MethodsOfDatabase:
             tuple[bool, str]: (success, message)
 
         Example:
-            success, msg = db.create_one_user(
+            success, msg = await db.create_one_user(
                 model=UserAllInfo,
                 user=telegram_user,
                 city="Moscow"
             )
         """
-        session = self._get_session()
-        try:
-            # Проверка на существование
-            user_id = user.id if user else kwargs.get("user_id")
+        async with self._get_session() as session:
+            try:
+                # Проверка на существование
+                user_id = user.id if user else kwargs.get("user_id")
 
-            if user_id:
-                existing = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
+                # Оптимизированная проверка через EXISTS
+                if user_id:
+                    exists_stmt = select(exists().where(model.user_id == user_id))  # type: ignore
+                    user_exists = await session.scalar(exists_stmt)
 
-                if existing:
-                    self._lg.debug(f"User {user_id} already exists.")
-                    return False, f"User {user_id} already exists."
+                    if user_exists:
+                        self._lg.debug(f"User {user_id} already exists.")
+                        return False, f"User {user_id} already exists."
 
-            # Подготовка данных из User объекта
-            data = {}
-            if user is not None:
-                data = {
-                    "user_id": user.id,
-                    "is_bot": user.is_bot,
-                    "is_premium": user.is_premium,
-                    "language_code": user.language_code,
-                    "supports_inline_queries": getattr(
-                        user, "supports_inline_queries", False
-                    ),
-                    "username": user.username,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                }
+                # Подготовка данных из User объекта
+                data = {}
+                if user is not None:
+                    data = {
+                        "user_id": user.id,
+                        "is_bot": user.is_bot,
+                        "is_premium": user.is_premium,
+                        "language_code": user.language_code,
+                        "supports_inline_queries": getattr(
+                            user, "supports_inline_queries", False
+                        ),
+                        "username": user.username,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                    }
 
-            # Добавляем/перезаписываем дополнительными параметрами
-            data.update(kwargs)
+                # Добавляем/перезаписываем дополнительными параметрами
+                data.update(kwargs)
 
-            # Создание записи
-            new_user = model(**data)
-            session.add(new_user)
-            session.commit()
-            session.refresh(new_user)
+                # Создание записи
+                new_user = model(**data)
+                session.add(new_user)
+                await session.commit()
+                await session.refresh(new_user)
 
-            # Redis cache
-            self.cache.set(key=user_id, data=data)  # type: ignore
+                # Redis cache
+                await self.cache.set(key=user_id, data=data)  # type: ignore
 
-            self._lg.debug(f"User created: {new_user.user_id}.")  # type: ignore
-            return True, f"User {new_user.user_id} created successfully."  # type: ignore
+                self._lg.debug(f"User created: {new_user.user_id}.")  # type: ignore
+                return True, f"User {new_user.user_id} created successfully."  # type: ignore
 
-        except Exception as e:
-            session.rollback()
-            self._lg.error(f"Failed to create user: {e}.", exc_info=True)
-            return False, f"Error: {str(e)}."
-        finally:
-            session.close()
+            except Exception as e:
+                await session.rollback()
+                self._lg.error(f"Failed to create user: {e}.", exc_info=True)
+                return False, f"Error: {str(e)}."
 
-    def delete_one_user_by_id(
+    async def delete_one_user_by_id(
         self,
         model: Type[T],
         user_id: int,
@@ -177,34 +192,36 @@ class MethodsOfDatabase:
         Returns:
             tuple[bool, str]: (success, message)
         """
-        session = self._get_session()
-        try:
-            user = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
+        async with self._get_session() as session:
+            try:
+                # Находим пользователя
+                stmt = select(model).where(model.user_id == user_id)  # type: ignore
+                result = await session.execute(stmt)
+                user = result.scalar_one_or_none()
 
-            if user is None:
-                self._lg.warning(f"User {user_id} not found for deletion.")
-                return False, f"User {user_id} not found."
+                if user is None:
+                    self._lg.warning(f"User {user_id} not found for deletion.")
+                    return False, f"User {user_id} not found."
 
-            # Сохраняем данные для лога
-            username = getattr(user, "username", "unknown")
+                # Сохраняем данные для лога
+                username = getattr(user, "username", "unknown")
 
-            session.delete(user)
-            session.commit()
+                # Удаляем
+                await session.delete(user)
+                await session.commit()
 
-            # Redis cache
-            self.cache.delete(key=user_id)
+                # Redis cache
+                await self.cache.delete(key=user_id)  # type: ignore
 
-            self._lg.debug(f"User deleted: {user_id} ({username}).")
-            return True, f"User {user_id} deleted successfully."
+                self._lg.debug(f"User deleted: {user_id} ({username}).")
+                return True, f"User {user_id} deleted successfully."
 
-        except Exception as e:
-            session.rollback()
-            self._lg.error(f"Failed to delete user {user_id}: {e}.", exc_info=True)
-            return False, f"Error: {str(e)}"
-        finally:
-            session.close()
+            except Exception as e:
+                await session.rollback()
+                self._lg.error(f"Failed to delete user {user_id}: {e}.", exc_info=True)
+                return False, f"Error: {str(e)}"
 
-    def update_one_user_by_id(
+    async def update_one_user_by_id(
         self,
         model: Type[T],
         user_id: int,
@@ -222,61 +239,64 @@ class MethodsOfDatabase:
             tuple[bool, str, dict]: (success, message, updated_fields)
 
         Example:
-            success, msg, changes = db.update_one_user_by_id(
+            success, msg, changes = await db.update_one_user_by_id(
                 model=UserAllInfo,
                 user_id=123456,
                 first_name="New Name",
                 city="Moscow"
             )
         """
-        session = self._get_session()
-        try:
-            user = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
+        async with self._get_session() as session:
+            try:
+                # Находим пользователя
+                stmt = select(model).where(model.user_id == user_id)  # type: ignore
+                result = await session.execute(stmt)
+                user = result.scalar_one_or_none()
 
-            if user is None:
-                self._lg.warning(f"User {user_id} not found for update.")
-                return False, f"User {user_id} not found.", None
+                if user is None:
+                    self._lg.warning(f"User {user_id} not found for update.")
+                    return False, f"User {user_id} not found.", None
 
-            if not kwargs:
-                self._lg.warning("No fields provided for update.")
-                return False, "No fields to update.", None
+                if not kwargs:
+                    self._lg.warning("No fields provided for update.")
+                    return False, "No fields to update.", None
 
-            updated_fields = {}
-            invalid_fields = []
+                updated_fields = {}
+                invalid_fields = []
 
-            # Обновляем только изменённые поля
-            for key, value in kwargs.items():
-                if hasattr(user, key):
-                    old_value = getattr(user, key)
-                    if old_value != value:
-                        setattr(user, key, value)
-                        updated_fields[key] = {"old": old_value, "new": value}
-                else:
-                    invalid_fields.append(key)
+                # Обновляем только изменённые поля
+                for key, value in kwargs.items():
+                    if hasattr(user, key):
+                        old_value = getattr(user, key)
+                        if old_value != value:
+                            setattr(user, key, value)
+                            updated_fields[key] = {"old": old_value, "new": value}
+                    else:
+                        invalid_fields.append(key)
 
-            if invalid_fields:
-                self._lg.warning(f"Invalid fields ignored: {invalid_fields}.")
+                if invalid_fields:
+                    self._lg.warning(f"Invalid fields ignored: {invalid_fields}.")
 
-            if not updated_fields:
-                return True, "No changes detected.", {}
+                if not updated_fields:
+                    return True, "No changes detected.", {}
 
-            session.commit()
-            session.refresh(user)
+                await session.commit()
+                await session.refresh(user)
 
-            # Redis cache
-            self.cache.update(user_id, updated_fields)
+                # Redis cache
+                await self.cache.update(user_id, updated_fields)  # type: ignore
 
-            self._lg.debug(f"User {user_id} updated: {list(updated_fields.keys())}.")
-            return True, f"Updated {len(updated_fields)} fields.", updated_fields
+                self._lg.debug(
+                    f"User {user_id} updated: {list(updated_fields.keys())}."
+                )
+                return True, f"Updated {len(updated_fields)} fields.", updated_fields
 
-        except Exception as e:
-            session.rollback()
-            self._lg.error(f"Failed to update user {user_id}: {e}.", exc_info=True)
-            return False, f"Error: {str(e)}", None
-        finally:
-            session.close()
+            except Exception as e:
+                await session.rollback()
+                self._lg.error(f"Failed to update user {user_id}: {e}.", exc_info=True)
+                return False, f"Error: {str(e)}", None
 
-    def user_exists(self, model: Type[T], user_id: int) -> bool:
+    async def user_exists(self, model: Type[T], user_id: int) -> bool:
         """
         Check if user exists in database
 
@@ -287,24 +307,22 @@ class MethodsOfDatabase:
         Returns:
             bool: True if user exists, False otherwise
         """
-        session = self._get_session()
-        try:
-            if self.cache.exists(user_id):
-                return True
-            else:
+        # Проверяем кэш
+        if await self.cache.exists(user_id):  # type: ignore
+            return True
+
+        async with self._get_session() as session:
+            try:
                 # Используем EXISTS для оптимизации
                 stmt = select(exists().where(model.user_id == user_id))  # type: ignore
-                result = session.execute(stmt).scalar()
-
+                result = await session.scalar(stmt)
                 return bool(result)
 
-        except Exception as e:
-            self._lg.error(f"Error checking user existence: {e}.")
-            return False
-        finally:
-            session.close()
+            except Exception as e:
+                self._lg.error(f"Error checking user existence: {e}.")
+                return False
 
-    def user_location_exists(self, model: Type[T], user_id: int) -> bool:
+    async def user_location_exists(self, model: Type[T], user_id: int) -> bool:
         """
         Check if user location exists in database
 
@@ -315,9 +333,9 @@ class MethodsOfDatabase:
         Returns:
             bool: True if user location exists, False otherwise
         """
-        session = self._get_session()
         try:
-            cached_data = self.cache.get(user_id)
+            # Проверяем кэш
+            cached_data = await self.cache.get(user_id)  # type: ignore
 
             if cached_data:
                 self._lg.debug(f"Cached data (deserialized) - {cached_data}")
@@ -340,33 +358,36 @@ class MethodsOfDatabase:
                     return False
 
             else:
+                # Проверяем БД
                 self._lg.debug(f"No cache for user {user_id}, checking database")
-                user = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
 
-                if not user:
-                    self._lg.warning(f"User {user_id} not found in database")
+                async with self._get_session() as session:
+                    stmt = select(model).where(model.user_id == user_id)  # type: ignore
+                    result = await session.execute(stmt)
+                    user = result.scalar_one_or_none()
+
+                    if not user:
+                        self._lg.warning(f"User {user_id} not found in database")
+                        return False
+
+                    city = getattr(user, "city", None)
+                    lat = getattr(user, "latitude", None)
+                    lon = getattr(user, "longitude", None)
+
+                    if city or lat or lon:
+                        self._lg.debug(
+                            f"User {user_id} location found in DB: city={city}, lat={lat}, lon={lon}"
+                        )
+                        return True
+
+                    self._lg.debug(f"User {user_id} location not found in DB")
                     return False
 
-                city = getattr(user, "city", None)
-                lat = getattr(user, "latitude", None)
-                lon = getattr(user, "longitude", None)
-
-                if city or lat or lon:
-                    self._lg.debug(
-                        f"User {user_id} location found in DB: city={city}, lat={lat}, lon={lon}"
-                    )
-                    return True
-
-                self._lg.debug(f"User {user_id} location not found in DB")
-                return False
-
         except Exception as e:
-            self._lg.error(f"Error checking user existence: {e}.")
+            self._lg.error(f"Error checking user location existence: {e}.")
             return False
-        finally:
-            session.close()
 
-    def find_by_one_user_id(
+    async def find_by_one_user_id(
         self,
         model: Type[T],
         user_id: int,
@@ -383,15 +404,16 @@ class MethodsOfDatabase:
         Returns:
             Model instance, dictionary, or None if not found
         """
-        session = self._get_session()
         try:
-            cached_data = self.cache.get(user_id)
-
+            # Проверяем кэш
+            cached_data = await self.cache.get(user_id)  # type: ignore
             if cached_data:
                 return cached_data
 
-            else:
-                user = session.query(model).filter(model.user_id == user_id).first()  # type: ignore
+            async with self._get_session() as session:
+                stmt = select(model).where(model.user_id == user_id)  # type: ignore
+                result = await session.execute(stmt)
+                user = result.scalar_one_or_none()
 
                 if user is None:
                     self._lg.debug(f"User {user_id} not found.")
@@ -399,25 +421,26 @@ class MethodsOfDatabase:
 
                 if as_dict:
                     # Преобразуем в словарь
-                    result = {
+                    result_dict = {
                         column.name: getattr(user, column.name)
                         for column in model.__table__.columns
                     }
                     self._lg.debug(f"User {user_id} found and returned as dict.")
-                    return result
+                    return result_dict
                 else:
-                    # Отвязываем от сессии
-                    session.expunge(user)
+                    # Для async нужно make_transient или detach
+                    # make_transient удаляет объект из session
+                    from sqlalchemy.orm import make_transient
+
+                    make_transient(user)
                     self._lg.debug(f"User {user_id} found and returned as object.")
                     return user
 
         except Exception as e:
             self._lg.error(f"Error finding user {user_id}: {e}.")
             return None
-        finally:
-            session.close()
 
-    def find_users(  # TODO
+    async def find_users(  # TODO
         self,
         model: Type[T],
         filters: dict[str, Any] | None = None,
@@ -439,52 +462,54 @@ class MethodsOfDatabase:
             List of users (as dicts or model instances)
 
         Example:
-            users = db.find_users(
+            users = await db.find_users(
                 model=UserAllInfo,
                 filters={"is_premium": True, "language_code": "ru"},
                 limit=50
             )
         """
-        session = self._get_session()
-        try:
-            query = session.query(model)
+        async with self._get_session() as session:
+            try:
+                stmt = select(model)
 
-            # Применяем фильтры
-            if filters:
-                for key, value in filters.items():
-                    if hasattr(model, key):
-                        query = query.filter(getattr(model, key) == value)
-                    else:
-                        self._lg.warning(f"Invalid filter field: {key}.")
+                # Применяем фильтры
+                if filters:
+                    for key, value in filters.items():
+                        if hasattr(model, key):
+                            stmt = stmt.where(getattr(model, key) == value)
+                        else:
+                            self._lg.warning(f"Invalid filter field: {key}.")
 
-            # Применяем лимиты
-            query = query.limit(limit).offset(offset)
+                # Применяем лимиты
+                stmt = stmt.limit(limit).offset(offset)
 
-            users = query.all()
+                # Выполняем запрос
+                result = await session.execute(stmt)
+                users = result.scalars().all()
 
-            self._lg.debug(f"Found {len(users)} users with filters: {filters}.")
+                self._lg.debug(f"Found {len(users)} users with filters: {filters}.")
 
-            if as_dict:
-                return [
-                    {
-                        col.name: getattr(user, col.name)
-                        for col in model.__table__.columns
-                    }
-                    for user in users
-                ]
-            else:
-                # Отвязываем от сессии
-                for user in users:
-                    session.expunge(user)
-                return users
+                if as_dict:
+                    return [
+                        {
+                            col.name: getattr(user, col.name)
+                            for col in model.__table__.columns
+                        }
+                        for user in users
+                    ]
+                else:
+                    # Делаем объекты transient
+                    from sqlalchemy.orm import make_transient
 
-        except Exception as e:
-            self._lg.error(f"Error finding users: {e}.", exc_info=True)
-            return []
-        finally:
-            session.close()
+                    for user in users:
+                        make_transient(user)
+                    return list(users)
 
-    def count_users(  # TODO
+            except Exception as e:
+                self._lg.error(f"Error finding users: {e}.", exc_info=True)
+                return []
+
+    async def count_users(  # TODO
         self,
         model: Type[T],
         filters: dict[str, Any] | None = None,
@@ -500,33 +525,31 @@ class MethodsOfDatabase:
             int: Number of users matching filters
 
         Example:
-            premium_count = db.count_users(
+            premium_count = await db.count_users(
                 model=UserAllInfo,
                 filters={"is_premium": True}
             )
         """
-        session = self._get_session()
-        try:
-            query = session.query(func.count(model.id))  # type: ignore
+        async with self._get_session() as session:
+            try:
+                stmt = select(func.count(model.id))  # type: ignore
 
-            if filters:
-                for key, value in filters.items():
-                    if hasattr(model, key):
-                        query = query.filter(getattr(model, key) == value)
+                if filters:
+                    for key, value in filters.items():
+                        if hasattr(model, key):
+                            stmt = stmt.where(getattr(model, key) == value)
 
-            count = query.scalar()
+                count = await session.scalar(stmt)
 
-            self._lg.debug(f"Count: {count} users with filters: {filters}.")
+                self._lg.debug(f"Count: {count} users with filters: {filters}.")
 
-            return count or 0
+                return count or 0
 
-        except Exception as e:
-            self._lg.error(f"Error counting users: {e}.")
-            return 0
-        finally:
-            session.close()
+            except Exception as e:
+                self._lg.error(f"Error counting users: {e}.")
+                return 0
 
-    def create_many_users(  # TODO
+    async def create_many_users(  # TODO
         self,
         model: Type[T],
         users_data: list[dict[str, Any]],
@@ -542,7 +565,7 @@ class MethodsOfDatabase:
             tuple[int, int, list]: (created_count, failed_count, error_messages)
 
         Example:
-            created, failed, errors = db.create_many_users(
+            created, failed, errors = await db.create_many_users(
                 model=UserAllInfo,
                 users_data=[
                     {"user_id": 1, "first_name": "User1", "is_bot": False},
@@ -550,37 +573,39 @@ class MethodsOfDatabase:
                 ]
             )
         """
-        session = self._get_session()
-        created = 0
-        failed = 0
-        errors = []
+        async with self._get_session() as session:
+            created = 0
+            failed = 0
+            errors = []
 
-        try:
-            for user_data in users_data:
-                try:
-                    new_user = model(**user_data)
-                    session.add(new_user)
-                    created += 1
-                except Exception as e:
-                    error_msg = f"Failed to add user {user_data.get('user_id')}: {e}"
-                    self._lg.warning(error_msg)
-                    errors.append(error_msg)
-                    failed += 1
+            try:
+                for user_data in users_data:
+                    try:
+                        new_user = model(**user_data)
+                        session.add(new_user)
+                        created += 1
+                    except Exception as e:
+                        error_msg = (
+                            f"Failed to add user {user_data.get('user_id')}: {e}"
+                        )
+                        self._lg.warning(error_msg)
+                        errors.append(error_msg)
+                        failed += 1
 
-            session.commit()
+                await session.commit()
 
-            self._lg.debug(f"Batch creation: {created} users created, {failed} failed.")
+                self._lg.debug(
+                    f"Batch creation: {created} users created, {failed} failed."
+                )
 
-            return created, failed, errors
+                return created, failed, errors
 
-        except Exception as e:
-            session.rollback()
-            self._lg.error(f"Batch creation failed: {e}.", exc_info=True)
-            return 0, len(users_data), [f"Batch error: {str(e)}"]
-        finally:
-            session.close()
+            except Exception as e:
+                await session.rollback()
+                self._lg.error(f"Batch creation failed: {e}.", exc_info=True)
+                return 0, len(users_data), [f"Batch error: {str(e)}"]
 
-    def get_all_user_ids(  # TODO
+    async def get_all_user_ids(  # TODO
         self,
         model: Type[T],
     ) -> list[int]:
@@ -593,120 +618,141 @@ class MethodsOfDatabase:
         Returns:
             list[int]: List of user IDs
         """
-        session = self._get_session()
-        try:
-            user_ids = session.query(model.user_id).all()  # type: ignore
-            result = [user_id[0] for user_id in user_ids]
+        async with self._get_session() as session:
+            try:
+                stmt = select(model.user_id)  # type: ignore
+                result = await session.execute(stmt)
+                user_ids = result.scalars().all()
 
-            self._lg.debug(f"Retrieved {len(result)} user IDs.")
-            return result
+                self._lg.debug(f"Retrieved {len(user_ids)} user IDs.")
+                return list(user_ids)
 
-        except Exception as e:
-            self._lg.error(f"Error getting user IDs: {e}.")
-            return []
-        finally:
-            session.close()
+            except Exception as e:
+                self._lg.error(f"Error getting user IDs: {e}.")
+                return []
 
     # ==== Weather Methods ====
-    def create_weather_cache(
+    async def create_weather_cache(
         self,
         model: Type[T],
-        weather_id,
+        weather_id: str,
         **kwargs: Any,
     ) -> tuple[bool, str]:
-        """"""
-        session = self._get_session()
-        try:
-            if weather_id:
-                existing = (
-                    session.query(model).filter(model.weather_id == weather_id).first()  # type: ignore
+        """
+        Create weather cache entry
+
+        Args:
+            model: Model class (WeatherAllInfo)
+            weather_id: Unique weather cache identifier
+            **kwargs: Additional fields to set
+
+        Returns:
+            tuple[bool, str]: (success, message)
+        """
+        async with self._get_session() as session:
+            try:
+                if weather_id:
+                    # Проверяем существование
+                    stmt = select(model).where(model.weather_id == weather_id)  # type: ignore
+                    result = await session.execute(stmt)
+                    existing = result.scalar_one_or_none()
+
+                    if existing:
+                        self._lg.debug(f"Weather {weather_id} already exists.")
+                        return False, f"Weather {weather_id} already exists."
+
+                # Подготовка данных
+                data = {"weather_id": weather_id}
+                data.update(kwargs)
+
+                # Создание записи
+                new_weather_cache = model(**data)
+                session.add(new_weather_cache)
+                await session.commit()
+                await session.refresh(new_weather_cache)
+
+                # Redis cache
+                await self.cache.set(key=weather_id, data=data)  # type: ignore
+
+                self._lg.debug(f"Weather created: {new_weather_cache.weather_id}.")  # type: ignore
+                return (
+                    True,
+                    f"Weather {new_weather_cache.weather_id} created successfully.",  # type: ignore
                 )
 
-                if existing:
-                    self._lg.debug(f"Weather {weather_id} already exists.")
-                    return False, f"Weather {weather_id} already exists."
+            except Exception as e:
+                await session.rollback()
+                self._lg.error(f"Failed to create weather cache: {e}.", exc_info=True)
+                return False, f"Error: {str(e)}."
 
-            # Подготовка данных из Weather_id объекта
-            data = {}
-            if weather_id is not None:
-                data = {
-                    "weather_id": weather_id,
-                }
-
-            # Добавляем/перезаписываем дополнительными параметрами
-            data.update(kwargs)
-
-            # Создание записи
-            new_weather_cache = model(**data)
-            session.add(new_weather_cache)
-            session.commit()
-            session.refresh(new_weather_cache)
-
-            # Redis cache
-            self.cache.set(key=weather_id, data=data)  # type: ignore
-
-            self._lg.debug(f"Weather created: {new_weather_cache.weather_id}.")  # type: ignore
-            return True, f"Weather {new_weather_cache.weather_id} created successfully."  # type: ignore
-
-        except Exception as e:
-            session.rollback()
-            self._lg.error(f"Failed to create weather cache: {e}.", exc_info=True)
-            return False, f"Error: {str(e)}."
-        finally:
-            session.close()
-
-    def delete_weather_cache_by_id(
+    async def delete_weather_cache_by_id(
         self,
         model: Type[T],
-        weather_id,
+        weather_id: str,
     ) -> tuple[bool, str]:
-        """"""
-        session = self._get_session()
-        try:
-            weather_cache = (
-                session.query(model).filter(model.weather_id == weather_id).first()  # type: ignore
-            )
+        """
+        Delete weather cache by ID
 
-            if weather_cache is None:
-                self._lg.warning(f"Weather {weather_id} not found for deletion.")
-                return False, f"Weather {weather_id} not found."
+        Args:
+            model: Model class
+            weather_id: Weather cache identifier
 
-            session.delete(weather_cache)
-            session.commit()
+        Returns:
+            tuple[bool, str]: (success, message)
+        """
+        async with self._get_session() as session:
+            try:
+                stmt = select(model).where(model.weather_id == weather_id)  # type: ignore
+                result = await session.execute(stmt)
+                weather_cache = result.scalar_one_or_none()
 
-            # Redis cache
-            self.cache.delete(key=weather_id)
+                if weather_cache is None:
+                    self._lg.warning(f"Weather {weather_id} not found for deletion.")
+                    return False, f"Weather {weather_id} not found."
 
-            self._lg.debug(f"Weather deleted: {weather_id}.")
-            return True, f"Weather {weather_id} deleted successfully."
+                await session.delete(weather_cache)
+                await session.commit()
 
-        except Exception as e:
-            session.rollback()
-            self._lg.error(
-                f"Failed to delete weather cache {weather_id}: {e}.", exc_info=True
-            )
-            return False, f"Error: {str(e)}"
-        finally:
-            session.close()
+                # Redis cache
+                await self.cache.delete(key=weather_id)  # type: ignore
 
-    def find_weather_cache_by_id(
+                self._lg.debug(f"Weather deleted: {weather_id}.")
+                return True, f"Weather {weather_id} deleted successfully."
+
+            except Exception as e:
+                await session.rollback()
+                self._lg.error(
+                    f"Failed to delete weather cache {weather_id}: {e}.", exc_info=True
+                )
+                return False, f"Error: {str(e)}"
+
+    async def find_weather_cache_by_id(
         self,
         model: Type[T],
-        weather_id: int,
+        weather_id: str,
         as_dict: bool = True,
     ) -> T | dict[str, Any] | None:
-        """"""
-        session = self._get_session()
-        try:
-            cached_data = self.cache.get(weather_id)
+        """
+        Find weather cache by ID
 
+        Args:
+            model: Model class
+            weather_id: Weather cache identifier
+            as_dict: Return as dictionary instead of model instance
+
+        Returns:
+            Model instance, dictionary, or None if not found
+        """
+        try:
+            # Проверяем кэш
+            cached_data = await self.cache.get(weather_id)  # type: ignore
             if cached_data:
                 return cached_data
 
-            else:
-                weather = (
-                    session.query(model).filter(model.weather_id == weather_id).first()  # type: ignore
-                )
+            async with self._get_session() as session:
+                stmt = select(model).where(model.weather_id == weather_id)  # type: ignore
+                result = await session.execute(stmt)
+                weather = result.scalar_one_or_none()
 
                 if weather is None:
                     self._lg.debug(f"Weather {weather_id} not found.")
@@ -714,15 +760,17 @@ class MethodsOfDatabase:
 
                 if as_dict:
                     # Преобразуем в словарь
-                    result = {
+                    result_dict = {
                         column.name: getattr(weather, column.name)
                         for column in model.__table__.columns
                     }
                     self._lg.debug(f"Weather {weather_id} found and returned as dict.")
-                    return result
+                    return result_dict
                 else:
-                    # Отвязываем от сессии
-                    session.expunge(weather)
+                    # Делаем transient
+                    from sqlalchemy.orm import make_transient
+
+                    make_transient(weather)
                     self._lg.debug(
                         f"Weather {weather_id} found and returned as object."
                     )
@@ -731,105 +779,133 @@ class MethodsOfDatabase:
         except Exception as e:
             self._lg.error(f"Error finding weather {weather_id}: {e}.")
             return None
-        finally:
-            session.close()
 
-    def weather_cache_exists(self, model: Type[T], weather_id: int) -> bool:
-        """"""
-        session = self._get_session()
-        try:
-            if self.cache.exists(weather_id):
-                return True
-            else:
-                # Используем EXISTS для оптимизации
+    async def weather_cache_exists(self, model: Type[T], weather_id: str) -> bool:
+        """
+        Check if weather cache exists
+
+        Args:
+            model: Model class
+            weather_id: Weather cache identifier
+
+        Returns:
+            bool: True if exists, False otherwise
+        """
+        # Проверяем кэш
+        if await self.cache.exists(weather_id):  # type: ignore
+            return True
+
+        async with self._get_session() as session:
+            try:
+                # Используем EXISTS
                 stmt = select(exists().where(model.weather_id == weather_id))  # type: ignore
-                result = session.execute(stmt).scalar()
-
+                result = await session.scalar(stmt)
                 return bool(result)
 
-        except Exception as e:
-            self._lg.error(f"Error checking weather cache existence: {e}.")
-            return False
-        finally:
-            session.close()
+            except Exception as e:
+                self._lg.error(f"Error checking weather cache existence: {e}.")
+                return False
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """
         Close database engine and dispose connection pool
 
         Should be called when shutting down the application
         """
         try:
-            self.engine.dispose()
+            await self.engine.dispose()
             self._lg.debug("Database engine disposed.")
         except Exception as e:
             self._lg.error(f"Error disposing engine: {e}.")
 
 
-def get_database_methods(session_factory: sessionmaker) -> MethodsOfDatabase:
-    """Factory function to create MethodsOfDatabase instance"""
-    from src.database.core import Base, engine
+# Главная фабрика
+async def get_database_methods(
+    session_factory,
+    Base: Type[DeclarativeBase],
+    engine: AsyncEngine,
+) -> MethodsOfDatabase:
+    """
+    Factory function to create and initialize MethodsOfDatabase
 
-    return MethodsOfDatabase(session_factory, Base, engine)
+    Args:
+        session_factory: SQLAlchemy async session factory
+        base: Declarative base class
+        engine: Async database engine
+
+    Returns:
+        Fully initialized MethodsOfDatabase instance
+    """
+
+    db_methods = MethodsOfDatabase(session_factory, Base, engine)
+
+    # Инициализация таблиц
+    await db_methods.create_tables_and_database()
+
+    # Инициализация кеша дб Redis
+    await db_methods.initialize_cache()
+
+    return db_methods
 
 
 if __name__ == "__main__":
     """Тестирование методов базы данных"""
-    from src.database.core import SessionLocal
+    import asyncio
+    from src.database.core import init_database
     from src.database.models import UserAllInfo
+    from src.core import setup_logging
 
-    _lg = get_logger()
+    async def main():
+        setup_logging(level="DEBUG")
+        _lg = get_logger()
 
-    _lg.debug("Testing MethodsOfDatabase:")
+        _lg.debug("Testing MethodsOfDatabase:")
 
-    # Создаём экземпляр
-    dbm = get_database_methods(SessionLocal)
+        # Инициализация БД
+        engine, SessionLocal = await init_database()
 
-    # # Тест 1: Создание пользователя
-    # _lg.debug("Test 1: Creating user:")
-    # success, msg = dbm.create_one_user(
-    #     model=UserAllInfo,
-    #     user_id=5080080714,
-    #     is_bot=False,
-    #     first_name="Shayden",
-    #     supports_inline_queries=False,
-    # )
-    # _lg.debug(f"Result: {success} - {msg}.")
+        # Создаём экземпляр
+        from src.database.core.database import Base
 
-    # Тест 2: Проверка существования
-    _lg.debug("Test 2: Check if user exists:")
-    exists = dbm.user_exists(UserAllInfo, 5080080714)
-    _lg.debug(f"User exists: {exists}.")
+        dbm = await get_database_methods(SessionLocal, Base, engine)
 
-    # Тест 2.1: Проверка существования локации
-    _lg.debug("Test 2.1: Check if user location exists:")
-    loc_exists = dbm.user_location_exists(UserAllInfo, 5080080714)
-    _lg.debug(f"User location exists: {loc_exists}.")
+        # Тест 1: Создание пользователя
+        _lg.debug("Test 1: Creating user:")
+        success, msg = await dbm.create_one_user(
+            model=UserAllInfo,
+            user_id=5080080714,
+            is_bot=False,
+            first_name="Shayden",
+            supports_inline_queries=False,
+        )
+        _lg.debug(f"Result: {success} - {msg}.")
 
-    # Тест 3: Поиск пользователя
-    _lg.debug("Test 3: Find user:")
-    user = dbm.find_by_one_user_id(UserAllInfo, 5080080714, as_dict=True)
-    _lg.debug(f"Found user: {user}.")
+        # Тест 2: Проверка существования
+        _lg.debug("Test 2: Check if user exists:")
+        exists = await dbm.user_exists(UserAllInfo, 5080080714)
+        _lg.debug(f"User exists: {exists}.")
 
-    # Тест 4: Обновление
-    # _lg.debug("Test 4: Update user:")
-    # success, msg, changes = dbm.update_one_user_by_id(
-    #     UserAllInfo, 5080080714, is_premium=True, city="Moscow"
-    # )
-    # _lg.debug(f"Result: {success} - {msg}.")
-    # _lg.debug(f"Changes: {changes}.")
+        # Тест 3: Поиск пользователя
+        _lg.debug("Test 3: Find user:")
+        user = await dbm.find_by_one_user_id(UserAllInfo, 5080080714, as_dict=True)
+        _lg.debug(f"Found user: {user}.")
 
-    # Тест 5: Подсчёт
-    _lg.debug("Test 5: Count users:")
-    count = dbm.count_users(UserAllInfo)
-    _lg.debug(f"Total users: {count}.")
+        # Тест 4: Обновление
+        _lg.debug("Test 4: Update user:")
+        success, msg, changes = await dbm.update_one_user_by_id(
+            UserAllInfo, 5080080714, is_premium=True, city="Moscow"
+        )
+        _lg.debug(f"Result: {success} - {msg}.")
+        _lg.debug(f"Changes: {changes}.")
 
-    # Тест 6: Удаление
-    # _lg.debug("Test 6: Delete user:")
-    # success, msg = dbm.delete_one_user_by_id(UserAllInfo, 5080080714)
-    # _lg.debug(f"Result: {success} - {msg}.")
+        # Тест 5: Подсчёт
+        _lg.debug("Test 5: Count users:")
+        count = await dbm.count_users(UserAllInfo)
+        _lg.debug(f"Total users: {count}.")
 
-    # Закрываем соединение
-    dbm.close()
+        # Закрываем соединение
+        await dbm.close()
 
-    _lg.debug("Testing completed!")
+        _lg.debug("Testing completed!")
+
+    asyncio.run(main())

@@ -1,13 +1,36 @@
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import declarative_base
 
 from .database_config import get_engine
 from src.core import get_logger
 
 _lg = get_logger()
 
-engine = get_engine()
-SessionLocal = sessionmaker(engine, autocommit=False, autoflush=False)
 Base = declarative_base()
-
-_lg.debug(type(engine))
 _lg.debug(f"Base из database.py: {id(Base)}")
+
+
+async def init_database():
+    """
+    Initialize async database engine and session factory
+
+    Returns:
+        tuple: (engine, session_factory) | None
+    """
+    try:
+        engine = await get_engine()
+        SessionLocal = async_sessionmaker(
+            engine,
+            class_=AsyncSession,
+            autocommit=False,
+            autoflush=False,
+            expire_on_commit=False,  # Важно для async
+        )
+
+        _lg.debug(type(engine))
+        _lg.info("Async database initialized successfully")
+
+        return engine, SessionLocal
+
+    except Exception as e:
+        _lg.critical(f"Internall error: {e}")

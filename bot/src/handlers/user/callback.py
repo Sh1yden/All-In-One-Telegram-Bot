@@ -60,15 +60,15 @@ async def weather_callback_handler(
         if callback_data.action == "weather_menu":
             await message.edit_text(
                 text=locale.message_weather_menu(),
-                reply_markup=get_btns_weather(
+                reply_markup=await get_btns_weather(
                     user_id=user.id, locale=locale, user_repo=user_repo
                 ),
             )
 
         # 🌡 Сейчас
         elif callback_data.action == "weather_now":
-            if user_repo.has_location(user.id):
-                location = user_repo.get_by_id(user.id)
+            if await user_repo.has_location(user.id):
+                location = await user_repo.get_by_id(user.id)
                 latitude = location.get("latitude", None)
                 longitude = location.get("longitude", None)
                 city = location.get("city")
@@ -144,8 +144,8 @@ async def weather_callback_handler(
 
         # 📍 Локация
         elif callback_data.action == "weather_location":
-            if user_repo.has_location(user.id):
-                location = user_repo.get_by_id(user.id)
+            if await user_repo.has_location(user.id):
+                location = await user_repo.get_by_id(user.id)
 
                 city = location.get("city")
                 latitude = location.get("latitude")
@@ -254,7 +254,7 @@ async def handle_location_phone(
         _lg.debug(f"User city on phone is - {city}.")
 
         user_repo = repos["user_repo"]
-        success = user_repo.update_location(user.id, city, lat, lon)
+        success = await user_repo.update_location(user.id, city, lat, lon)
 
         if success:
             _lg.debug(str(success))
@@ -325,7 +325,7 @@ async def handle_location_pc(
         _lg.debug(f"User city on PC is - {city}.")
 
         user_repo = repos["user_repo"]
-        success = user_repo.update_location(user.id, city, lat, lon)
+        success = await user_repo.update_location(user.id, city, lat, lon)
 
         if success:
             _lg.debug(str(success))

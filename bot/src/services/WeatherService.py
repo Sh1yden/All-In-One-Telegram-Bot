@@ -194,12 +194,11 @@ async def get_weather_now(
             return None
 
         ymdhm = datetime.now().strftime("%Y%m%d%H")
-        WN_idex = "WN"
-        weather_id = f"{WN_idex}{city}{ymdhm}"
+        weather_id = f"{city}{ymdhm}"
 
         # Redis cache
-        if weather_repo.exists(weather_id):
-            weather_now_msg = weather_repo.get_by_id(weather_id)
+        if await weather_repo.exists(weather_id):
+            weather_now_msg = await weather_repo.get_by_id(weather_id)
             return weather_now_msg["weather_now_msg"]
 
         else:
@@ -232,6 +231,8 @@ async def get_weather_now(
                 latitude=latitude,
                 longitude=longitude,
             )
+
+            _lg.debug(f"Results is - {results}")
 
             # TODO осталось добавить google погоду и возможно open weather map
 
@@ -271,14 +272,14 @@ async def get_weather_now(
             current_hour = datetime.now().replace(minute=0, second=0, microsecond=0)
             prev_hour = current_hour - timedelta(hours=1)
             prev_ymdhm = prev_hour.strftime("%Y%m%d%H")
-            prev_weather_id = f"{WN_idex}{city}{prev_ymdhm}"
+            prev_weather_id = f"{city}{prev_ymdhm}"
 
-            if weather_repo.exists(prev_weather_id):
-                weather_repo.delete(prev_weather_id)
+            if await weather_repo.exists(prev_weather_id):
+                await weather_repo.delete(prev_weather_id)
                 _lg.debug(f"Deleted old weather cache: {prev_weather_id}")
 
             # New Redis cache
-            weather_repo.save_from_weather_id(
+            await weather_repo.save_from_weather_id(
                 weather_id=weather_id,
                 weather_now_msg=weather_now_msg,
             )

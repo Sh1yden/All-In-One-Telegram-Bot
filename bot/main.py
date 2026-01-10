@@ -15,7 +15,7 @@ from fluentogram.exceptions import (
     RootTranslatorNotFoundError,
 )
 from src.core import get_logger, setup_logging
-from src.database.core import SessionLocal
+from src.database.core import init_database
 from src.database.repositories.factory import create_repositories
 from src.handlers import router as main_router
 from src.middlewares.middlewares import DataBaseMiddleware, TranslateMiddleware
@@ -165,6 +165,9 @@ def create_bot() -> Bot | None:
 async def run_bot() -> None:
     """Async main app function."""
     repos = None
+    engine = None
+    runner = None
+
     try:
         _lg.debug("Start main func.")
 
@@ -173,7 +176,9 @@ async def run_bot() -> None:
             _lg.critical("Failed to create a bot. Exiting.")
             return
 
-        repos = create_repositories(SessionLocal)
+        engine, SessionLocal = await init_database()
+
+        repos = await create_repositories(SessionLocal)
         _lg.info("Database initialized.")
 
         dp = create_dispatcher(repos)
@@ -252,7 +257,13 @@ async def run_bot() -> None:
         # Close database
         if repos:  # type: ignore
             try:
-                repos["user_repo"].db_methods.close()
+                # Redis
+                if repos["user_repo"].db_methods.cache:
+                    await repos["user_repo"].db_methods.cache.close()
+                    _lg.info("Redis cache closed.")
+
+                # DB
+                await repos["user_repo"].db_methods.close()
                 _lg.info("Database closed.")
             except Exception as e:
                 _lg.error(f"Error closing database: {e}.")

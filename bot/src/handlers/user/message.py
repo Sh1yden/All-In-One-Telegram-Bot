@@ -31,12 +31,12 @@ async def command_start_handler(
 
         user: User | None = message.from_user
 
-        if message.from_user is None:
+        if user is None:
             _lg.warning("User is None in start handler")
             await message.answer(locale.message_service_error_not_user_enable())
             return
 
-        full_name_user = html.bold(message.from_user.full_name)
+        full_name_user = html.bold(message.from_user.full_name)  # type: ignore
         _lg.debug(f"User: {full_name_user}")
 
         main_menu_text = f"{locale.message_start_hello()}{full_name_user or 'Пользователь'}{locale.message_start_main_menu()}"
@@ -49,8 +49,8 @@ async def command_start_handler(
 
         # Создание пользователя в БД
         user_repo = repos["user_repo"]
-        if not user_repo.exists(user.id):
-            user_repo.save_from_telegram_user(user)
+        if not await user_repo.exists(user.id):
+            await user_repo.save_from_telegram_user(user)
             _lg.debug(f"New user created: {user.id}")
 
     except Exception as e:
@@ -85,7 +85,7 @@ async def command_weather_handler(
 
     await message.answer(
         text=locale.message_weather_menu(),
-        reply_markup=get_btns_weather(
+        reply_markup=await get_btns_weather(
             user_id=user.id, locale=locale, user_repo=user_repo
         ),
     )
@@ -108,8 +108,8 @@ async def command_weather_now_handler(
         await message.answer(locale.message_service_error_not_user_enable())
         return
 
-    if user_repo.has_location(user.id):
-        location = user_repo.get_by_id(user.id)
+    if await user_repo.has_location(user.id):
+        location = await user_repo.get_by_id(user.id)
         latitude = location.get("latitude", None)
         longitude = location.get("longitude", None)
         city = location.get("city")
@@ -151,8 +151,8 @@ async def request_location(
         await message.answer(locale.message_service_error_not_user_enable())
         return
 
-    if user_repo.has_location(user.id):
-        location = user_repo.get_by_id(user.id)
+    if await user_repo.has_location(user.id):
+        location = await user_repo.get_by_id(user.id)
 
         city = location.get("city")
         latitude = location.get("latitude")
